@@ -1,0 +1,9 @@
+/* The layer itself never captures clicks; only the form widgets do, so empty page areas stay
+   clickable for whatever sits below/above (page selection, text tool). */
+.form-layer {
+  pointer-events: none;
+}
+
+.form-layer section {
+  pointer-events: auto;
+}
