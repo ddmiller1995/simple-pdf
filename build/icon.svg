@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4f8cff"/>
+      <stop offset="1" stop-color="#2556d9"/>
+    </linearGradient>
+    <linearGradient id="nib" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffb347"/>
+      <stop offset="1" stop-color="#f07f1a"/>
+    </linearGradient>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000" flood-opacity="0.28"/>
+    </filter>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+  <g filter="url(#sh)">
+    <path d="M298 190 H590 L726 326 V804 a28 28 0 0 1 -28 28 H298 a28 28 0 0 1 -28 -28 V218 a28 28 0 0 1 28 -28 Z" fill="#ffffff"/>
+  </g>
+  <path d="M590 190 V298 a28 28 0 0 0 28 28 H726 Z" fill="#cfd9f5"/>
+  <g stroke="#b9c4e0" stroke-width="22" stroke-linecap="round">
+    <line x1="350" y1="400" x2="560" y2="400"/>
+    <line x1="350" y1="468" x2="646" y2="468"/>
+    <line x1="350" y1="536" x2="646" y2="536"/>
+  </g>
+  <path d="M350 700 C 390 600, 430 600, 420 680 C 412 740, 470 690, 500 650 C 520 625, 530 700, 560 700 C 590 700, 610 660, 640 640" fill="none" stroke="#1d3fa8" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(640 640) rotate(40)">
+    <path d="M-34 -250 H34 L44 -60 L0 70 L-44 -60 Z" fill="url(#nib)" stroke="#b85c0a" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M-34 -250 H34 V-300 a34 34 0 0 0 -34 -34 h0 a34 34 0 0 0 -34 34 Z" fill="#33415c"/>
+    <line x1="0" y1="-120" x2="0" y2="60" stroke="#b85c0a" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="0" cy="-120" r="11" fill="#b85c0a"/>
+  </g>
+</svg>

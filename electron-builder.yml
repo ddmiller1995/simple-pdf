@@ -1,11 +1,20 @@
-# Minimal config so `pnpm dist:mac` is valid. T8 owns the full packaging setup.
+# Packaging config. See docs/RELEASING.md.
+# NOTE: appId is a placeholder reverse-DNS id; change it to one you own before shipping.
 appId: com.simplepdf.app
 productName: Simple PDF
+copyright: Copyright © 2026 Dakota Miller
 directories:
   output: release
+  buildResources: build
+# Everything the app needs at runtime lives under out/ (renderer assets include the PDF.js
+# cmaps/standard_fonts/wasm/iccs and the bundled Noto Sans font). No node_modules are shipped:
+# all dependencies are bundled by Vite.
 files:
   - out/**
   - package.json
+  # Vite bundles every dependency into out/, so node_modules is not shipped.
+  - '!node_modules'
+asar: true
 fileAssociations:
   - ext: pdf
     name: PDF Document
@@ -13,5 +22,37 @@ fileAssociations:
     role: Editor
     isPackage: false
 mac:
-  target: dmg
+  target:
+    - target: dmg
+      arch: arm64
+    - target: zip
+      arch: arm64
   category: public.app-category.productivity
+  icon: build/icon.icns
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  # Unsigned local builds work out of the box (no Developer ID). To sign, remove this line and
+  # set CSC_LINK / CSC_KEY_PASSWORD or use a keychain identity; see docs/RELEASING.md.
+  identity: null
+  # notarize: true   # enable once signing; needs APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
+dmg:
+  title: Simple PDF ${version}
+win:
+  target:
+    - target: nsis
+      arch: x64
+  icon: build/icon.png
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+linux:
+  target:
+    - AppImage
+    - deb
+  icon: build/icon.png
+  category: Office
+  maintainer: Dakota Miller <ddmiller1995@gmail.com>
+  mimeTypes:
+    - application/pdf

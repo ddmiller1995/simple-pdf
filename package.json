@@ -19,7 +19,11 @@
     "test": "vitest run",
     "e2e": "electron-vite build && playwright test",
     "fixtures": "tsx scripts/make-fixtures.ts",
-    "dist:mac": "electron-vite build && electron-builder --mac",
+    "dist:mac": "electron-vite build && electron-builder --mac --arm64",
+    "dist:win": "electron-vite build && electron-builder --win",
+    "dist:linux": "electron-vite build && electron-builder --linux",
+    "verify:packaged": "playwright test -c playwright.packaged.config.ts",
+    "icon": "tsx scripts/make-icon.ts",
     "postinstall": "node node_modules/electron/install.js"
   },
   "pnpm": {
