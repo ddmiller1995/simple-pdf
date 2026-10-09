@@ -286,6 +286,10 @@ Token-saving rules:
 #### T7 · End-to-end flows and UX polish
 - **Owns:** `tests/e2e/*` (full flows), `styles.css`, cross-cutting UI polish (coordinate in §8 before editing other owners' components).
 - **Steps:** Full-flow E2E: open → fill form fields → add free text → import signature from a synthetic photo → drag it onto the last page → save → verify the output with a PDF.js text and image check. Visual polish: a clean, native-feeling toolbar (system font, macOS-like spacing), clear empty state, view-only banner, keyboard shortcuts listed in the tooltips, light/dark mode via `prefers-color-scheme` (the PDF pages stay white). Accessibility: every toolbar button has a label, there are focus rings, and text boxes are keyboard-reachable. Write `docs/MANUAL_QA.md` (the checklist in §9).
+- **User feedback from the first hands-on test (2026-10-09). T7 now also owns the T5 overlay files needed for these:**
+  1. **Corner handles scale text.** On a selected text box, dragging a corner scales the text proportionally: font size and box grow or shrink together, keeping the opposite corner anchored. Clamp the font size to 6–96pt. The font-size dropdown shows the current size even when it isn't a preset (show it rounded to 0.5pt). Add a middle handle on the left and right edges that keeps the old behaviour: change the box width and re-wrap. One drag = one undo step. Image (signature) corners are unchanged (aspect-locked resize).
+  2. **Place a signature at the cursor ("stamp" mode).** Clicking a signature thumbnail arms it instead of placing it at the page centre. A semi-transparent ghost at its default size follows the cursor over pages. Clicking a page places it centred on the cursor, clamped to the page, and disarms. Shift+click places it and stays armed, for initialling many pages. Esc, clicking the toolbar or choosing another tool cancels. The cursor shows a crosshair while armed. Dragging a thumbnail still works as before. Update the toolbar tooltip / panel hint text to explain this.
+  - Cover both with E2E tests: a diagonal corner drag increases `fontSize` and the export round-trip still matches to ±1pt; an armed click places the signature at the cursor to ±1pt (in PDF space) on a rotated page; Shift+click stamps twice; Esc cancels.
 - **Acceptance:** All E2E tests are green. The manual QA checklist has been run once and its results recorded in §7.
 
 #### T8 · Packaging (macOS now, Windows/Linux configured)
@@ -317,8 +321,8 @@ T0 ──┬── T1 ──┬── T5 ──┬── T7
 | T4 AcroForms | done | `task/T4-forms` | sonnet-5.5 / medium | forms.ts + FormLayer merged; unit criteria met. E2E form fill + view-only banner covered by T6's save.spec. |
 | T5 Overlay editing | done | `task/T5-overlays` | sonnet-5.5 / medium | Text tool, signature drag/click placement, select/move/resize, font size, undo/redo, shortcuts. 14 unit + 2 E2E tests (export round-trip ±1pt on a 90° page). |
 | T6 Save & lifecycle | done | `task/T6-save` | sonnet-5.5 / medium | Save/Save As (atomic), unsaved prompt on close/quit/open-another, menus, open-file, view-only banner. Covers T4's deferred E2E. Orchestrator restricted writePdf to dialog-approved paths. |
-| T7 E2E & polish | todo | | | |
-| T8 Packaging | todo | | | |
+| T7 E2E & polish | in-progress | `task/T7-polish` | sonnet-5.5 / medium | Includes the user-feedback items (text scaling handles, signature stamp mode). |
+| T8 Packaging | in-progress | `task/T8-packaging` | sonnet-5.5 / medium | |
 
 Statuses: `todo` → `in-progress` → `review` → `done` (or `blocked: <reason>`). In the Agent/Owner column, record the model and effort used (e.g. `sonnet-5.5 / medium`).
 
