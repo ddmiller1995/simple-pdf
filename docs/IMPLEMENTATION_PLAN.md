@@ -157,6 +157,10 @@ type MenuCommand = 'open'|'save'|'saveAs'|'undo'|'redo'|'zoomIn'|'zoomOut'|'zoom
 
 `{ doc: { fileName, sourcePath, outputPath?, sourceBytes, pages: PageInfo[], capabilities } | null, overlays: Overlay[], formValues: FormValues, tool: 'select'|'text', selectedId?: string, zoom: number, history: { past, future }, dirty: boolean }` plus actions: `loadDocument`, `addOverlay`, `updateOverlay`, `removeOverlay`, `setFormValue`, `setTool`, `select`, `undo`, `redo`, `markSaved`. Undo history covers overlays and formValues.
 
+### 4.4b PDF.js document access (`pdf/loader.ts`)
+
+`loadPdf(bytes)` loads a document and makes it the current one. `getPdfDocument()` returns the current `PDFDocumentProxy` (or null) and `getPdfPage(index)` returns a cached `PDFPageProxy`. Layers that need PDF.js objects (CanvasLayer, FormLayer) use these getters. Proxies are never stored in the Zustand store.
+
 ### 4.5 PageView composition
 
 `PageView` stacks three absolutely positioned layers of identical size: `CanvasLayer` (PDF.js bitmap) → `FormLayer` (PDF.js AnnotationLayer inputs) → `OverlayLayer` (our text/images). Each layer receives `{ page: PageInfo, viewport: PageViewport }`. Phase 0 creates all three as stubs so their owners can work in parallel.
