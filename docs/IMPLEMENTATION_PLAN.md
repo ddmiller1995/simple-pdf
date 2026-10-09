@@ -301,7 +301,7 @@ T0 ──┬── T1 ──┬── T5 ──┬── T7
 
 | Task | Status | Branch | Agent/Owner | Notes |
 |---|---|---|---|---|
-| T0 Scaffold & contracts | review | `task/T0-scaffold` | sonnet-5.5 / high | Scaffold, security, contracts, store, stubs, fixtures and smoke E2E done. All checks green. See §8 for deviations and gotchas. |
+| T0 Scaffold & contracts | done | `task/T0-scaffold` | sonnet-5.5 / high | Scaffold, security, contracts, store, stubs, fixtures and smoke E2E done. All checks green. See §8 for deviations and gotchas. |
 | T1 Viewer | todo | | | |
 | T2 Coords/text/export | todo | | | |
 | T3 Signature extraction & library | todo | | | |
