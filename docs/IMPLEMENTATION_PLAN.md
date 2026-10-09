@@ -1,0 +1,354 @@
+# Simple PDF: Implementation Plan
+
+> This is the single coordination document that sub-agents read and update.
+
+---
+
+## 1. Context
+
+We are building **Simple PDF**, an offline desktop app for viewing, filling out and signing PDFs. The repo is currently empty. The goals are a deliberately small feature set and a simple UX:
+
+1. Offline-only desktop app. macOS first; Windows and Linux later from the same codebase.
+2. Simple UX with only the basics.
+3. View multi-page PDFs.
+4. Sign PDFs: import a photo or scan of a signature or initials, extract the ink onto a transparent background, then drag and drop it onto a page.
+5. Fill PDFs: click anywhere to type free text, and fill the PDF's built-in form fields.
+6. Save the result.
+
+Each phase lists its tasks, the files each task owns and its acceptance criteria, so sub-agents can work in parallel without conflicting.
+
+---
+
+## 2. Key decisions
+
+| # | Decision | Choice | Why |
+|---|---|---|---|
+| D1 | App shell | **Electron** (latest stable) + **React 18/19 + TypeScript** | Same Chromium rendering on every OS (important for canvas-heavy PDF rendering and precise drag/drop), one language everywhere, the most mature desktop ecosystem, and Playwright can drive the real app on macOS for E2E tests. Bundle size (~150MB) is acceptable. |
+| D2 | Build tooling | **electron-vite** (dev/build) + **electron-builder** (packaging) + **pnpm** | electron-vite is stable and widely used. Electron Forge's Vite plugin is still marked experimental. electron-builder produces dmg/nsis/AppImage from a single config. |
+| D3 | PDF rendering | **pdfjs-dist** (Mozilla PDF.js), pinned at install time | The industry standard. Tolerant of malformed files. Includes an AnnotationLayer that renders AcroForm fields as HTML inputs. |
+| D4 | PDF writing | **@cantoo/pdf-lib** + **@pdf-lib/fontkit** | A maintained, drop-in fork of pdf-lib (the original has been unmaintained since 2021). Pure JS. Embeds images and fonts, fills and flattens AcroForms. |
+| D5 | Signing | **Visual only**: a transparent PNG stamped into the page content | No certificates or PKCS#7 in v1. |
+| D6 | Form fields | **Free-text overlays + AcroForm fields** | XFA forms and encrypted PDFs are detected and shown as "view-only" with a clear message. |
+| D7 | Save model | **Flatten into page content, Save As by default** | Output looks identical in every viewer. The first save opens a Save As dialog defaulting to `<name>-signed.pdf`. Later Cmd+S writes to that output file. The opened original is never overwritten silently. |
+| D8 | State | **Zustand** store in the renderer | Small, simple, easy to test. |
+| D9 | Text font | Bundled **Noto Sans Regular** (OFL), embedded with fontkit | Supports Unicode (the standard Helvetica only supports WinAnsi). The same font file is loaded via `@font-face` on screen, so what you see matches what is saved. |
+| D10 | Offline guarantee | All network requests blocked in the main process. PDF.js cmaps, standard fonts and wasm are bundled locally. Strict CSP. | Requirement #1. |
+| D11 | Testing | **Vitest** (unit, pure modules) + **Playwright `_electron`** (E2E against the real app) | Agents can verify their own work end-to-end. |
+
+**Out of scope for v1:** cryptographic signatures, page operations (rotate/reorder/delete), editing existing PDF annotations, multiple tabs/documents, printing, search, OCR, password-protected PDFs (view-only at most), HEIC import (users can export as JPEG/PNG), auto-update, telemetry.
+
+---
+
+## 3. Architecture
+
+```
+┌──────────────────────── Main process (Node) ─────────────────────────┐
+│ index.ts      window lifecycle, open-file events, close guard         │
+│ security.ts   block network, deny navigation/window.open, CSP         │
+│ menu.ts       native menus + accelerators → send events to renderer   │
+│ ipc.ts        file dialogs, read/write files (atomic), signature store│
+│ signatureStore.ts  userData/signatures/{id}.png + index.json          │
+└───────────────▲──────────────────────────────────────────────────────┘
+                │ contextBridge (typed `window.api`, see src/shared/ipc.ts)
+┌───────────────┴──────────── Preload ─────────────────────────────────┐
+│ preload/index.ts   exposes window.api ONLY; no Node in renderer       │
+└───────────────▲──────────────────────────────────────────────────────┘
+┌───────────────┴──────────── Renderer (React) ────────────────────────┐
+│ state/documentStore.ts   source bytes, pages, overlays, formValues,   │
+│                          tool mode, selection, undo/redo, dirty flag  │
+│ pdf/loader.ts            PDF.js setup (local worker/cmaps/fonts/wasm) │
+│ pdf/coords.ts            screen ⇄ PDF user-space conversion (pure)    │
+│ pdf/textLayout.ts        shared text metrics for screen + export      │
+│ pdf/export.ts            sourceBytes+overlays+formValues → PDF bytes  │
+│ pdf/forms.ts             field discovery, value mapping, XFA detect   │
+│ signature/extract.ts     photo → transparent cropped ink PNG (pure)   │
+│ viewer/*                 Viewer, PageView (Canvas/Form/Overlay layers)│
+│ overlays/*               TextBox, ImageBox, selection handles         │
+│ signature/*              SignaturePanel, SignatureImportDialog        │
+│ toolbar/Toolbar.tsx                                                  │
+└──────────────────────────────────────────────────────────────────────┘
+```
+
+**Data flow:** Open → main reads bytes → renderer keeps `sourceBytes` (never mutated) → PDF.js renders → user adds overlays and fills fields (all in store) → Save → `export.ts` builds new bytes with pdf-lib → main writes the file atomically.
+
+### Project layout
+
+```
+simple-pdf/
+  package.json  pnpm-lock.yaml  electron.vite.config.ts  electron-builder.yml
+  tsconfig.json  tsconfig.node.json  tsconfig.web.json  .eslintrc / eslint.config.js  .prettierrc
+  docs/IMPLEMENTATION_PLAN.md
+  resources/icon.icns  resources/fonts/NotoSans-Regular.ttf
+  scripts/make-fixtures.ts            # generates test PDFs + synthetic signature photos
+  src/shared/types.ts  src/shared/ipc.ts
+  src/main/{index,security,menu,ipc,signatureStore}.ts
+  src/preload/index.ts
+  src/renderer/index.html  src/renderer/src/{main.tsx,App.tsx,styles.css}
+  src/renderer/src/state/documentStore.ts
+  src/renderer/src/pdf/{loader,coords,textLayout,export,forms}.ts
+  src/renderer/src/viewer/{Viewer,PageView,CanvasLayer,FormLayer,OverlayLayer}.tsx
+  src/renderer/src/overlays/{TextBox,ImageBox,SelectionHandles}.tsx
+  src/renderer/src/signature/{extract.ts,SignaturePanel.tsx,SignatureImportDialog.tsx}
+  src/renderer/src/toolbar/Toolbar.tsx
+  tests/fixtures/  tests/unit/  tests/e2e/
+```
+
+---
+
+## 4. Shared contracts (defined in Phase 0; changes must be logged in §8)
+
+### 4.1 Coordinate convention (critical)
+
+- Overlays are stored in **PDF user space** (points, origin bottom-left, **unrotated** page), *not* screen pixels. Zoom changes never touch stored data.
+- `rect = { x, y, width, height }`, where `(x, y)` is the bottom-left corner in unrotated user space. Rotations of 90/180/270 map axis-aligned rects to axis-aligned rects, so this is always well-defined.
+- The screen ⇄ PDF conversion uses PDF.js `viewport.convertToPdfPoint` / `convertToViewportPoint` (these handle the CropBox offset and `/Rotate`). Only `pdf/coords.ts` does coordinate math.
+- On export, the overlay content is rotated by the page's `/Rotate` so it appears upright to the viewer, exactly as it did on screen.
+
+### 4.2 Types (`src/shared/types.ts`)
+
+```ts
+export type PdfRect = { x: number; y: number; width: number; height: number };
+
+export type TextOverlay = {
+  kind: 'text'; id: string; pageIndex: number;
+  rect: PdfRect;            // box; text flows from top-left (as seen on screen)
+  text: string;             // may contain '\n'
+  fontSize: number;         // points, default 12
+  color: [number, number, number]; // 0..1 RGB, default black
+};
+
+export type ImageOverlay = {
+  kind: 'image'; id: string; pageIndex: number;
+  rect: PdfRect;            // aspect ratio locked to the image
+  signatureId: string;
+  pngDataUrl: string;       // self-contained so export never needs IPC
+};
+
+export type Overlay = TextOverlay | ImageOverlay;
+export type FormValue = string | boolean | string[];   // text | checkbox | choice
+export type FormValues = Record<string /* fully-qualified field name */, FormValue>;
+
+export type PageInfo = { index: number; widthPt: number; heightPt: number; rotation: 0|90|180|270 };
+
+export type SavedSignature = { id: string; label: string; kind: 'signature'|'initials'; createdAt: string; pngDataUrl: string };
+
+export type DocCapabilities = { editable: boolean; hasAcroForm: boolean; reason?: 'encrypted'|'xfa'|'unparseable' };
+```
+
+### 4.3 IPC API (`src/shared/ipc.ts`, exposed as `window.api`)
+
+```ts
+interface Api {
+  openPdfDialog(): Promise<{ path: string; bytes: Uint8Array } | null>;
+  readPdf(path: string): Promise<Uint8Array>;                  // for drag-drop / open-file
+  savePdfDialog(suggestedName: string): Promise<string | null>; // returns chosen path
+  writePdf(path: string, bytes: Uint8Array): Promise<void>;     // atomic: tmp + rename
+  listSignatures(): Promise<SavedSignature[]>;
+  addSignature(sig: Omit<SavedSignature,'id'|'createdAt'>): Promise<SavedSignature>;
+  deleteSignature(id: string): Promise<void>;
+  setDirty(dirty: boolean): void;                               // main uses this for close guard
+  onMenu(cb: (cmd: MenuCommand) => void): () => void;
+  onOpenFile(cb: (path: string) => void): () => void;           // Finder "Open With", 2nd-instance
+}
+type MenuCommand = 'open'|'save'|'saveAs'|'undo'|'redo'|'zoomIn'|'zoomOut'|'zoomFit'|'toolSelect'|'toolText'|'delete';
+```
+
+### 4.4 Store shape (`state/documentStore.ts`)
+
+`{ doc: { fileName, sourcePath, outputPath?, sourceBytes, pages: PageInfo[], capabilities } | null, overlays: Overlay[], formValues: FormValues, tool: 'select'|'text', selectedId?: string, zoom: number, history: { past, future }, dirty: boolean }` plus actions: `loadDocument`, `addOverlay`, `updateOverlay`, `removeOverlay`, `setFormValue`, `setTool`, `select`, `undo`, `redo`, `markSaved`. Undo history covers overlays and formValues.
+
+### 4.5 PageView composition
+
+`PageView` stacks three absolutely positioned layers of identical size: `CanvasLayer` (PDF.js bitmap) → `FormLayer` (PDF.js AnnotationLayer inputs) → `OverlayLayer` (our text/images). Each layer receives `{ page: PageInfo, viewport: PageViewport }`. Phase 0 creates all three as stubs so their owners can work in parallel.
+
+---
+
+## 5. Agent coordination rules
+
+1. **Read §2–§4 before starting.** Contracts are fixed. If you must change one, make the smallest change, record it in §8 Change Log, and update every stub or consumer in the same commit.
+2. **Own only your files.** Each task lists the files it owns. Touching another task's files requires a note in §8.
+3. **Work on a branch** `task/<ID>-<slug>` (use a git worktree when tasks run in parallel). Rebase on `main` before merging.
+4. **Test-first for pure modules** (`coords`, `textLayout`, `export`, `forms`, `extract`, store).
+5. **Definition of done:** `pnpm typecheck && pnpm lint && pnpm test` pass, the task's acceptance criteria are met, any relevant E2E test is added and passing (`pnpm e2e`), and the §7 status table is updated with notes.
+6. **No network calls of any kind** in app code or at runtime. Never load fonts, workers or wasm from a CDN.
+7. Keep the UX minimal. If you feel the urge to add a feature, add a note to §8 instead.
+
+### Execution settings (token budget)
+
+The orchestrator spawns each task with an explicit `model` and `effort`. Most tasks run on Sonnet 5.5 at medium effort. Higher effort is used only where a subtle mistake would be expensive to find later.
+
+| Task | Model | Effort | Reason |
+|---|---|---|---|
+| T0 Scaffold & contracts | Sonnet 5.5 | high | Every later task builds on these definitions. |
+| T1 Viewer | Sonnet 5.5 | medium | Well-trodden PDF.js usage. |
+| T2 Coords/text/export | Sonnet 5.5 | high | Rotation and coordinate math; subtle off-by-transform bugs. |
+| T3 Signature extraction | Sonnet 5.5 | high | Image-processing algorithm. |
+| T4 AcroForms | Sonnet 5.5 | medium | |
+| T5 Overlay editing | Sonnet 5.5 | medium | |
+| T6 Save & lifecycle | Sonnet 5.5 | medium | |
+| T7 E2E & polish | Sonnet 5.5 | medium | |
+| T8 Packaging | Sonnet 5.5 | medium | |
+
+Token-saving rules:
+- The orchestrator (Opus) only dispatches tasks, reviews diffs and merges; it doesn't do implementation work.
+- Agents read only §2–§5 plus their own task section, not the whole plan.
+- A failing task is resumed with SendMessage (its context is kept) instead of being respawned from scratch.
+- If a task fails review twice, escalate it to high effort.
+
+---
+
+## 6. Tasks
+
+### Phase 0: Foundation (1 agent, sequential; blocks everything)
+
+#### T0 · Scaffold, security, contracts, fixtures
+- **Owns:** everything at the root, `src/shared/*`, `src/main/{index,security}.ts`, `src/preload/index.ts`, stubs for every file in the §3 layout, `scripts/make-fixtures.ts`, `tests/fixtures/*`, `tests/e2e/smoke.spec.ts`.
+- **Steps:**
+  1. Scaffold electron-vite with the React + TS template, using pnpm. Add ESLint, Prettier, Vitest and Playwright. Scripts: `dev`, `build`, `typecheck`, `lint`, `test`, `e2e`, `fixtures`, `dist:mac`.
+  2. Security: `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`. `setWindowOpenHandler → deny`. Prevent `will-navigate`. `session.webRequest.onBeforeRequest` cancels `http(s)/ws(s)` (allow only the Vite dev-server origin in dev). CSP meta: `default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; img-src 'self' data: blob:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' blob: data:`.
+  3. Write `src/shared/types.ts` and `src/shared/ipc.ts` exactly as in §4. Typed preload bridge. Stub IPC handlers that throw `NotImplemented`.
+  4. Zustand store skeleton with the §4.4 shape and unit-tested `undo`/`redo`/`dirty` basics.
+  5. Stubs for all renderer components (render placeholders) so later tasks only fill in their own files.
+  6. `scripts/make-fixtures.ts` (uses pdf-lib) generates: `simple-3page.pdf` (Letter, labeled pages), `mixed-sizes.pdf` (Letter + A4 + landscape), `rotated.pdf` (pages with /Rotate 0/90/180/270, each with a marker in a known corner), `cropbox-offset.pdf` (CropBox ≠ MediaBox), `acroform.pdf` (text, multiline text, checkbox, radio group, dropdown), `encrypted.pdf` (create with `qpdf` if available; otherwise commit a small public-domain sample and record its source), `large-50page.pdf`. Also synthetic signature photos via canvas/pngjs: dark strokes on (a) clean white, (b) off-white with a lighting gradient plus noise, (c) lined paper, and (d) a blue-ink variant. Add a README in `tests/fixtures/` asking the human to drop in a real phone photo `real-signature.jpg`.
+  7. Playwright `_electron` smoke test: the app launches and shows the empty state "Open a PDF or drag one here".
+- **Acceptance:** `pnpm dev` opens the window. All scripts pass. The smoke E2E passes. Fixtures are generated and committed. Devtools Network shows zero external requests.
+
+### Phase 1: Core modules (4 agents in parallel after T0)
+
+#### T1 · Viewer
+- **Owns:** `pdf/loader.ts`, `viewer/{Viewer,PageView,CanvasLayer}.tsx`, `App.tsx` (empty state + layout), `toolbar/Toolbar.tsx` (zoom + page indicator + Open only), main `ipc.ts` open/read handlers.
+- **Steps:** Configure PDF.js with a local worker (Vite `?url` import), `cMapUrl` / `standardFontDataUrl` / `wasmUrl` pointing to assets copied from `pdfjs-dist` into the build output, and `isEvalSupported: false`. Open via the toolbar, File menu and drag-drop onto the window. Render a vertical scroll of pages with a gap. Lazy-render only visible ±1 pages (IntersectionObserver) and release canvases far off-screen. HiDPI: canvas size = CSS size × `devicePixelRatio`. Zoom: fit-width (default), ±, 50–400%, Cmd+= / Cmd+- / Cmd+0. The page indicator "3 / 12" tracks scroll. Populate the store's `pages: PageInfo[]`.
+- **Acceptance:** All fixtures render correctly, including `rotated`, `cropbox-offset` and `mixed-sizes`. The 50-page file scrolls smoothly with bounded memory. E2E: open `simple-3page.pdf` → 3 pages visible, indicator works. Opening an unparseable file shows a friendly error.
+
+#### T2 · Coordinates, text layout and export engine (pure, heavily tested)
+- **Owns:** `pdf/coords.ts`, `pdf/textLayout.ts`, `pdf/export.ts`, `resources/fonts/*`, `tests/unit/{coords,textLayout,export}.test.ts`.
+- **Steps:**
+  1. `coords.ts`: `screenRectToPdfRect(viewport, domRect)` and `pdfRectToScreenRect(viewport, rect)` built on PDF.js viewport conversion. Unit-test all four rotations and the CropBox offset (construct real `PageViewport` objects in Node).
+  2. `textLayout.ts`: one source of truth for line height (`1.2 × fontSize`), ascent and line breaking from the Noto Sans metrics (fontkit). The screen TextBox uses the same CSS font, size and line height. Export uses these numbers for baselines: line *i* baseline = top − ascent − i × lineHeight, in the rotated "visual" frame.
+  3. `export.ts`: `exportPdf({ sourceBytes, overlays, formValues, pages }): Promise<Uint8Array>`. Load with pdf-lib and register fontkit. Embed Noto Sans once (try `subset: true`; fall back to `false` if glyph issues appear). For each overlay, draw on its page. Text uses `drawText` per line with `rotate: degrees(pageRotation)` and an origin transformed into the visual frame. Images use `embedPng` (cache by `signatureId`) and `drawImage` with the same rotation logic. Form values are delegated to `forms.applyFormValues` (T4). Use a no-op until T4 lands, behind the imported function signature.
+- **Acceptance:** Round-trip tests re-open the output with PDF.js (Node legacy build). `getTextContent()` finds the overlay text at the expected position (±1pt) and orientation for every rotation and the CropBox fixture. Image XObjects are present at the expected rect. Unicode text (é, ü, ñ, Cyrillic) round-trips. The source bytes are unmodified after export.
+
+#### T3 · Signature extraction and signature library
+- **Owns:** `signature/extract.ts`, `signature/SignatureImportDialog.tsx`, `signature/SignaturePanel.tsx` (list/add/delete only; dragging comes in T5), `src/main/signatureStore.ts`, signature IPC handlers in `src/main/ipc.ts` (coordinate the file with T1: add separate `registerSignatureIpc()` / `registerFileIpc()` functions), `tests/unit/extract.test.ts`.
+- **Algorithm (`extract.ts`, pure, operates on `{ data: Uint8ClampedArray; width; height }`):**
+  1. Decode with `createImageBitmap(file, { imageOrientation: 'from-image' })` (in the dialog, not in the pure module). Downscale so the long edge is at most 2000px.
+  2. Convert to luminance (Rec. 709).
+  3. **Flat-field the background:** estimate the illumination with a large box blur (radius ≈ 1/16 of the short edge, three-pass separable box ≈ Gaussian), then `norm = clamp(lum / bg)`. This removes shadows and lighting gradients from phone photos.
+  4. **Otsu threshold** on `norm`, plus a user `sensitivity` offset (−0.2…+0.2).
+  5. **Soft alpha** for anti-aliased edges: alpha ramps linearly over ±0.05 around the threshold.
+  6. **Despeckle:** connected components (8-neighbourhood) on the binary mask. Drop components smaller than `max(20px, 0.02% of the area)`. Optionally drop long thin horizontal components spanning >60% of the width (ruled lines) when "Remove lines" is checked.
+  7. **Crop** to the bounding box of the remaining ink + 4% padding. Error if no ink is found.
+  8. **Recolor:** `black` (#111), `blue` (#1a3d8f) or `original` (keep the source RGB). Output RGBA, encoded to PNG in the dialog via an OffscreenCanvas.
+  - Return `{ imageData, bbox, threshold }`. It must run under 300ms on a 2000px image; if it can't, move it to a Web Worker.
+- **Dialog UX:** choose file (PNG/JPEG/WebP) or drop it in → side-by-side original and result (on a checkerboard background) → controls: Sensitivity slider, Ink color (Black/Blue/Original), Remove lines checkbox, Type (Signature / Initials) → Save. The result preview updates live (debounced).
+- **Store:** `userData/signatures/<uuid>.png` + `index.json`. IPC validates that data URLs are PNG and under 5MB.
+- **Acceptance:** Unit tests on all synthetic fixtures: the background becomes fully transparent (alpha = 0 for >99% of non-ink pixels in a known region), the ink is kept (>95% of known stroke pixels opaque), the crop is tight around the known stroke bbox (±5%), and lined paper with "Remove lines" leaves no line. Manual check with `real-signature.jpg` if provided. Saved signatures persist across restarts.
+
+#### T4 · AcroForm support
+- **Owns:** `pdf/forms.ts`, `viewer/FormLayer.tsx`, `tests/unit/forms.test.ts`.
+- **Steps:** `FormLayer` renders the PDF.js `AnnotationLayer` with `renderForms: true` into the layer div, using the document's `annotationStorage`. On input changes, map the annotation id → field name via `pdfDocument.getFieldObjects()` and call `store.setFormValue(name, value)`. On load, `forms.detectCapabilities(pdfjsDoc, bytes)` sets `hasAcroForm`, detects XFA (`pdfjsDoc.allXfaHtml` / `isPureXfa`) and encryption (pdf-lib load with `ignoreEncryption: false` throws) → `editable: false` with a reason. `forms.applyFormValues(pdfLibDoc, formValues)` handles text, checkbox, radio, dropdown and option list, then `form.flatten()` (with `updateFieldAppearances`). Wrap each field in try/catch: a field that fails to flatten is logged and left as a filled field rather than failing the whole save. Undo/redo must update the HTML inputs (re-sync from the store).
+- **Acceptance:** Unit test: fill every field type in `acroform.pdf` → export → re-open with PDF.js → there are no remaining form fields, and the text content contains the values. E2E: type into a field → save → reopen → the value is visible. `encrypted.pdf` and an XFA sample show a view-only banner and the editing tools are disabled.
+
+### Phase 2: Editing and lifecycle (2 agents in parallel after Phase 1)
+
+#### T5 · Overlay editing (text tool, signature placement, selection)
+- **Depends on:** T1, T2 (`coords`, `textLayout`), T3 (panel).
+- **Owns:** `viewer/OverlayLayer.tsx`, `overlays/*`, drag behaviour in `SignaturePanel.tsx`, the tool buttons in `Toolbar.tsx` (coordinate with T1's toolbar regions), store actions as needed.
+- **Behaviour:**
+  - **Tools:** Select (V) and Text (T). The Sign button opens the signature panel (popover) with saved signatures/initials and "Add signature…" (opens the T3 dialog).
+  - **Text tool:** clicking on a page creates a TextBox at the click point with the caret ready. It auto-grows as you type. Enter adds a newline. Esc or a click outside commits. Empty boxes are removed. Font-size control (8–36pt, default 12) appears in the toolbar when a text box is selected. Double-click with the Select tool edits the text.
+  - **Signature drag:** pointer-based drag from a panel thumbnail shows a ghost that follows the cursor. Dropping on a page creates an `ImageOverlay` with a default width of 150pt (initials 60pt), aspect locked, centred on the drop point and clamped to the page. Clicking a thumbnail also works: it places the signature at the centre of the visible page.
+  - **Selection:** click to select (outline + 4 corner handles). Drag to move, constrained to the page. Corner drag resizes images with the aspect locked; for text, corner drag resizes the box width (text re-wraps). Delete/Backspace removes. Arrow keys nudge 1pt (Shift = 10pt).
+  - All edits go through store actions, so undo/redo (Cmd+Z / Cmd+Shift+Z) works. Overlays re-position correctly on zoom (positions are derived from the PDF rect).
+- **Acceptance:** E2E: place text on page 2 of `rotated.pdf` (90° page) and a signature on page 1 → zoom in/out → the overlays stay anchored → undo/redo works → save → the T2 round-trip check confirms positions. Manual: interaction feels smooth at 60fps on the 50-page fixture.
+
+#### T6 · Save flow and document lifecycle
+- **Depends on:** T1, T2.
+- **Owns:** `src/main/menu.ts`, the save/close parts of `src/main/index.ts` and file IPC in `ipc.ts`, `App.tsx` save orchestration, `electron-builder.yml` file associations.
+- **Behaviour:**
+  - **Save (Cmd+S):** if no `outputPath`, act as Save As. Otherwise export and write to `outputPath`. **Save As (Cmd+Shift+S):** dialog defaulting to `<dir>/<name>-signed.pdf`. If the user picks the original path, the native dialog confirms the replace; that's allowed because it was explicit. Writes are atomic (temp file in the same directory + rename). After a successful save: `markSaved()`, `setDirty(false)`, and a brief "Saved to …" toast. On failure, show an error dialog and keep the dirty state.
+  - **Unsaved changes:** a prompt (Save / Don't Save / Cancel) when opening another file, closing the window or quitting (main tracks dirty via `setDirty`). The window title shows `name.pdf — Edited`, and `win.setDocumentEdited` is set on macOS.
+  - **Menus:** standard macOS app menu; File (Open…, Save, Save As…, Close); Edit (Undo, Redo, Cut, Copy, Paste, Delete, Select All, using roles where possible); View (Zoom In/Out, Actual Size, Fit Width); Window; Help. All are cross-platform via `process.platform` checks.
+  - **Open paths:** `open-file` (macOS Finder / Dock), `second-instance` + argv (Windows/Linux), single-instance lock. `.pdf` file association declared (role: Editor, not default handler).
+  - Disable Save when `capabilities.editable` is false.
+- **Acceptance:** E2E: edit → Cmd+S → dialog (stubbed in tests via an env-guarded test hook) → the file exists → re-opening shows the edits → the original's bytes are unchanged (hash compare). Closing with unsaved changes prompts. Opening via `open-file` works.
+
+### Phase 3: Integration, polish, packaging (2 agents after Phase 2)
+
+#### T7 · End-to-end flows and UX polish
+- **Owns:** `tests/e2e/*` (full flows), `styles.css`, cross-cutting UI polish (coordinate in §8 before editing other owners' components).
+- **Steps:** Full-flow E2E: open → fill form fields → add free text → import signature from a synthetic photo → drag it onto the last page → save → verify the output with a PDF.js text and image check. Visual polish: a clean, native-feeling toolbar (system font, macOS-like spacing), clear empty state, view-only banner, keyboard shortcuts listed in the tooltips, light/dark mode via `prefers-color-scheme` (the PDF pages stay white). Accessibility: every toolbar button has a label, there are focus rings, and text boxes are keyboard-reachable. Write `docs/MANUAL_QA.md` (the checklist in §9).
+- **Acceptance:** All E2E tests are green. The manual QA checklist has been run once and its results recorded in §7.
+
+#### T8 · Packaging (macOS now, Windows/Linux configured)
+- **Owns:** `electron-builder.yml`, `resources/icon.*`, `build/entitlements.mac.plist`, `docs/RELEASING.md`.
+- **Steps:** mac targets `dmg` + `zip`, arch `universal` (or separate arm64/x64). Hardened runtime entitlements. Ensure the PDF.js worker, cmaps, standard fonts, wasm and Noto Sans are inside the asar/unpacked resources, and verify the packaged app works with Wi-Fi off. Signing and notarization are documented but optional (it needs an Apple Developer ID, $99/yr; without one, users right-click → Open the first time). Configure `win: nsis` and `linux: AppImage, deb` targets. They're not verified in v1, but they should build in CI later.
+- **Acceptance:** `pnpm dist:mac` produces a dmg that installs and runs offline. Opening a PDF via Finder "Open With → Simple PDF" works.
+
+### Dependency graph
+
+```
+T0 ──┬── T1 ──┬── T5 ──┬── T7
+     ├── T2 ──┤        │
+     ├── T3 ──┘        ├── T8
+     └── T4 ───── T6 ──┘
+(T6 needs T1+T2; T5 needs T1+T2+T3; T4's export hook plugs into T2)
+```
+
+---
+
+## 7. Status board (agents update this)
+
+| Task | Status | Branch | Agent/Owner | Notes |
+|---|---|---|---|---|
+| T0 Scaffold & contracts | todo | | | |
+| T1 Viewer | todo | | | |
+| T2 Coords/text/export | todo | | | |
+| T3 Signature extraction & library | todo | | | |
+| T4 AcroForms | todo | | | |
+| T5 Overlay editing | todo | | | |
+| T6 Save & lifecycle | todo | | | |
+| T7 E2E & polish | todo | | | |
+| T8 Packaging | todo | | | |
+
+Statuses: `todo` → `in-progress` → `review` → `done` (or `blocked: <reason>`). In the Agent/Owner column, record the model and effort used (e.g. `sonnet-5.5 / medium`).
+
+---
+
+## 8. Change log and open questions
+
+- _(Record any contract change, cross-ownership edit, or deferred idea here: date, task, what, why.)_
+- Deferred ideas: draw a signature with the trackpad (`signature_pad`), "insert today's date" button, checkmark stamp, page thumbnails sidebar, print, find-in-document, HEIC import.
+
+---
+
+## 9. Verification
+
+**Automated (every task, before merge):**
+- `pnpm typecheck && pnpm lint && pnpm test` covers unit tests for coords (all rotations and CropBox), textLayout, export round-trips, forms flatten, signature extraction on synthetic photos, and store undo/redo.
+- `pnpm e2e` runs Playwright `_electron` against the built app: smoke, open/render, form fill, text placement, signature import + drag, save + re-open, unsaved-changes prompt.
+
+**Round-trip checker (shared test helper `tests/helpers/inspectPdf.ts`):** loads the output with PDF.js in Node. It returns per-page text items with positions, the image XObject count and bounds, and the remaining form fields. Used by T2, T4, T5, T6 and T7.
+
+**Manual QA (`docs/MANUAL_QA.md`, run before calling v1 done):**
+1. Turn Wi-Fi off. Launch the packaged app.
+2. Open a real-world multi-page PDF (a lease or tax form): it scrolls and zooms, and pages look crisp on Retina.
+3. Fill the AcroForm fields, add free text on two pages, and import a real phone photo of a signature. The background is removed cleanly; adjust the sensitivity if needed.
+4. Drag the signature and initials onto pages, then resize, move, delete and undo.
+5. Save As → open the output in **macOS Preview, Chrome and Adobe Reader**. Everything appears in the same place, nothing is editable or movable, and the text is selectable.
+6. Confirm the original file is unchanged. Confirm the close-with-unsaved-changes prompt.
+7. Open `encrypted.pdf` → view-only banner, and Save is disabled.
+
+---
+
+## 10. Risks and mitigations
+
+| Risk | Mitigation |
+|---|---|
+| pdf-lib fails on some malformed PDFs that PDF.js can render | Try the pdf-lib load at open time. On failure, set `editable: false, reason: 'unparseable'` and show the banner, so users can still view the file. |
+| Text position drifts between screen and output | A single `textLayout.ts` and the same font file on both sides. Round-trip position tests at ±1pt for all rotations. |
+| Phone photos with shadows, lined paper or colored paper | Flat-field normalization, a sensitivity slider and the "Remove lines" option. A trackpad-drawn signature is a deferred fallback. |
+| AcroForm flatten breaks on unusual fields | Per-field try/catch with fallback to an unflattened (but filled) field. Tested against the fixture plus a couple of real government forms in manual QA. |
+| PDF.js silently fetching resources (cmaps/fonts) | All URLs point at bundled local assets, the network is blocked in main, and an offline packaged-app check is part of T8. |
+| Large PDFs exhaust memory | Lazy render visible ±1 pages and release off-screen canvases. Tested with the 50-page fixture. |
+| Library API drift (pdfjs-dist is on v5/v6 in 2026) | Pin exact versions in T0. Agents check the installed version's types and docs (context7) rather than relying on memory. |
