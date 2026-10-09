@@ -322,7 +322,7 @@ T0 ──┬── T1 ──┬── T5 ──┬── T7
 | T5 Overlay editing | done | `task/T5-overlays` | sonnet-5.5 / medium | Text tool, signature drag/click placement, select/move/resize, font size, undo/redo, shortcuts. 14 unit + 2 E2E tests (export round-trip ±1pt on a 90° page). |
 | T6 Save & lifecycle | done | `task/T6-save` | sonnet-5.5 / medium | Save/Save As (atomic), unsaved prompt on close/quit/open-another, menus, open-file, view-only banner. Covers T4's deferred E2E. Orchestrator restricted writePdf to dialog-approved paths. |
 | T7 E2E & polish | in-progress | `task/T7-polish` | sonnet-5.5 / medium | Includes the user-feedback items (text scaling handles, signature stamp mode). |
-| T8 Packaging | in-progress | `task/T8-packaging` | sonnet-5.5 / medium | |
+| T8 Packaging | done | `task/T8-packaging` | sonnet-5.5 / medium | arm64 dmg + zip, unsigned. `.app` 297 MB, `.dmg` 128 MB. `pnpm verify:packaged` passes (renders argv + open-file PDFs, only `file:` requests). |
 
 Statuses: `todo` → `in-progress` → `review` → `done` (or `blocked: <reason>`). In the Agent/Owner column, record the model and effort used (e.g. `sonnet-5.5 / medium`).
 
@@ -398,6 +398,12 @@ Statuses: `todo` → `in-progress` → `review` → `done` (or `blocked: <reason
   - Test hooks (unpackaged only): `SIMPLE_PDF_E2E_SAVE=<path>`, `SIMPLE_PDF_E2E_UNSAVED=save|discard|cancel` (prompts counted in `globalThis.__simplePdfUnsavedPrompts`).
   - **For T7:** the window title is `name — Edited`. Save failures show a `save-error` banner, not a native dialog. A dirty window vetoes `app.close()`; tests can force-quit with `app.evaluate(({ app }) => app.exit(0))`.
   - **For T8:** `electron-builder.yml` has a `fileAssociations` entry (Editor role, no `LSHandlerRank`). Untested: Help menu, real Finder open-file, Windows/Linux `second-instance` and argv.
+- **2026-10-09 · T8 · Packaging notes.**
+  - `electron-builder.yml` excludes `node_modules` (Vite bundles every dependency), which shrank the `.app` from 395 MB to 297 MB. The asar contains the PDF.js worker, cmaps, standard fonts, jbig2/openjpeg/qcms wasm and Noto Sans.
+  - Entitlements: `allow-jit` only (no network-client). `hardenedRuntime: true`, `identity: null` (unsigned). The `.pdf` file association is kept. `win` (nsis) and `linux` (AppImage, deb) are configured but untested, as is x64.
+  - Icon: `build/icon.svg` → `icon.png` / `icon.icns` via `scripts/make-icon.ts` (`pnpm icon`).
+  - `pnpm verify:packaged` (`tests/packaged/`, `playwright.packaged.config.ts`) needs `pnpm dist:mac` first. The packaged app ignores the `SIMPLE_PDF_E2E_*` hooks, so drive it with an argv PDF path or `app.emit('open-file', …)`, and use `process.getBuiltinModule` inside `app.evaluate`. Its request recorder replaces the app's own `onBeforeRequest` block for that run; the app's own blocking is covered by `smoke.spec.ts`.
+  - **Human decisions pending:** `appId` is the placeholder `com.simplepdf.app`. Signing/notarization needs an Apple Developer ID (steps in `docs/RELEASING.md`).
 - **2026-10-09 · Orchestrator · Phase 2 merge fixes.**
   - `writePdf` only accepts paths returned by the save dialog (or its E2E hook) this session, and only bytes starting with `%PDF-`. There's an E2E test for the refusal.
   - `launchApp` now defaults `SIMPLE_PDF_E2E_UNSAVED=discard`. Without it, tests that closed a dirty window popped up a real native "save changes?" dialog that hung each test for a minute (reported by the human). **Rule: E2E must never show a native dialog.** Specs that exercise a prompt pass their own answer.
