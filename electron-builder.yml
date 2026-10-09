@@ -1,0 +1,11 @@
+# Minimal config so `pnpm dist:mac` is valid. T8 owns the full packaging setup.
+appId: com.simplepdf.app
+productName: Simple PDF
+directories:
+  output: release
+files:
+  - out/**
+  - package.json
+mac:
+  target: dmg
+  category: public.app-category.productivity
