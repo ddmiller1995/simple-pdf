@@ -1,0 +1,42 @@
+electron-builder.yml
+  s_e8b8bce4678e6f::t_66038b3c67180f 15
+  s_e8b8bce4678e6f::t_10ee00b0285f88 1-2,5,8-11,17,25-29,31-58
+  s_e8b8bce4678e6f::t_6f9629729e245b 16
+tsconfig.e2e.json
+  s_e8b8bce4678e6f::t_6f9629729e245b 7-13
+build/entitlements.mac.plist
+  s_e8b8bce4678e6f::t_10ee00b0285f88 1-11
+playwright.packaged.config.ts
+  s_e8b8bce4678e6f::t_740477d640c65f 1-10
+tests/packaged/packaged.spec.ts
+  s_e8b8bce4678e6f::t_97f2f58890b45e 1-58,60-101,105-120
+  s_e8b8bce4678e6f::t_6f9629729e245b 102-104
+  s_e8b8bce4678e6f::t_fe8df46f2b2087 59
+scripts/make-icon.ts
+  s_e8b8bce4678e6f::t_d8cbca82e16371 1-29
+build/icon.svg
+  s_e8b8bce4678e6f::t_779b051c18161c 1-32
+package.json
+  s_e8b8bce4678e6f::t_10ee00b0285f88 22-26
+docs/RELEASING.md
+  s_e8b8bce4678e6f::t_1ac38287609b9a 1-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3348e2e0b22dbd3a9dc46aa8493e16d4e65dd28d",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
