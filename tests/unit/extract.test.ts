@@ -1,4 +1,6 @@
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { PNG } from 'pngjs';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
   DEFAULT_EXTRACT_OPTIONS,
@@ -326,6 +328,18 @@ describe.skipIf(!existsSync(REAL))('real-signature.jpg (manual check)', () => {
           `opaque ${((ink * 100) / total).toFixed(1)}% of crop, ${ms.toFixed(0)} ms`,
       );
       expect(r.imageData.width).toBeGreaterThan(10);
+      // Manual visual check: SIG_PREVIEW_DIR=<dir> writes the result composited on light grey.
+      const outDir = process.env['SIG_PREVIEW_DIR'];
+      if (outDir) {
+        const { width, height, data } = r.imageData;
+        const png = new PNG({ width, height });
+        for (let i = 0; i < data.length; i += 4) {
+          const a = data[i + 3]! / 255;
+          for (let c = 0; c < 3; c++) png.data[i + c] = Math.round(data[i + c]! * a + 220 * (1 - a));
+          png.data[i + 3] = 255;
+        }
+        writeFileSync(join(outDir, `real-signature-lines-${removeLines}.png`), PNG.sync.write(png));
+      }
     }
   });
 });

@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../shared/ipc';
+import { createSignatureStore, type SignatureStore } from './signatureStore';
 
 // T0 stubs. Owners: T1/T6 fill `registerFileIpc`, T3 fills `registerSignatureIpc`.
 // Every handler throws until its owning task implements it.
@@ -42,11 +44,6 @@ export function registerFileIpc(): void {
   ipcMain.on(send.setDirty, () => {});
 }
 
-// T3: imports for the signature handlers live next to them (ES imports hoist) so that edits to
-// registerFileIpc's imports above do not collide with this block.
-import { app } from 'electron';
-import { join } from 'node:path';
-import { createSignatureStore, type SignatureStore } from './signatureStore';
 
 let signatureStore: SignatureStore | undefined;
 

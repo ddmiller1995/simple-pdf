@@ -4,6 +4,10 @@ import { registerFileIpc, registerSignatureIpc } from './ipc';
 import { installMenu } from './menu';
 import { installSecurity } from './security';
 
+// Test hook: E2E runs get an isolated profile so they never touch the real signature library.
+const testUserData = process.env['SIMPLE_PDF_USER_DATA'];
+if (testUserData && !app.isPackaged) app.setPath('userData', testUserData);
+
 installSecurity();
 
 function createWindow(): BrowserWindow {

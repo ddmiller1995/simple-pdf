@@ -41,14 +41,11 @@ test('renderer is isolated: typed bridge only, no Node', async () => {
   );
 });
 
-test('stub IPC handlers reject with NotImplemented', async () => {
-  const message = await page.evaluate(() =>
-    window.api.listSignatures().then(
-      () => '',
-      (e) => String(e),
-    ),
-  );
-  expect(message).toContain('NotImplemented');
+test('signature library starts empty in an isolated profile', async () => {
+  const sigs = await page.evaluate(() => window.api.listSignatures());
+  expect(sigs).toEqual([]);
+  const userData = await app.evaluate(({ app }) => app.getPath('userData'));
+  expect(userData).toContain('simple-pdf-e2e-');
 });
 
 test('window is sandboxed and window.open is denied', async () => {
