@@ -45,6 +45,14 @@ decode them in tests with `decodeImage()` from `tests/helpers/sigFixtures.ts`.
 | `sig-jpeg-heavy.jpg` (1200x600) | The cursive strokes saved at JPEG quality 8 (blocking and ringing). |
 | `sig-initials.png` (1000x760) | Blue "DM" initials in a broad pen, bottom-heavy lighting gradient. |
 
+Regression pair for "Remove lines" (long, slightly curved, tapered near-horizontal flourishes that
+used to be partly erased):
+
+| File | Variant |
+|---|---|
+| `sig-flourish.png` (1200x600) | Spiky signature with flourishes spanning ~72% and ~50% of the ink width, plain paper. |
+| `sig-flourish-lined.png` (1200x600) | The same strokes on ruled paper: 9 grey ~2px lines 60px apart, tilted 0.6 degrees (`y = 60k + 0.0105x`), drawn under the ink. Truth covers the ink only. |
+
 ## Real signature photo (please add)
 
 Drop a real phone photo of your signature here as **`real-signature.jpg`** (any size). It is used only

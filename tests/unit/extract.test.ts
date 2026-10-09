@@ -37,6 +37,7 @@ const CASES: [file: string, truth: () => Truth][] = [
   ['sig-phone.jpg', () => extraTruth('sig-phone.jpg')],
   ['sig-jpeg-heavy.jpg', () => extraTruth('sig-jpeg-heavy.jpg')],
   ['sig-initials.png', () => extraTruth('sig-initials.png')],
+  ['sig-flourish.png', () => extraTruth('sig-flourish.png')],
 ];
 
 const metrics: Record<string, Score & { ms: number }> = {};
@@ -282,6 +283,73 @@ describe('ruled lines', () => {
   });
 });
 
+const removeLinesMetrics: Record<string, Score> = {};
+afterAll(() => {
+  const rows = Object.entries(removeLinesMetrics).map(
+    ([name, m]) =>
+      `${name.padEnd(24)} bg-transparent ${(m.backgroundTransparent * 100).toFixed(2)}%  ink-kept ${(m.inkKept * 100).toFixed(2)}%  crop-err ${(m.cropError * 100).toFixed(2)}%`,
+  );
+  console.log('\nextraction metrics (Remove lines ON)\n' + rows.join('\n'));
+});
+
+describe('Remove lines never damages ink', () => {
+  it.each([
+    ...CASES,
+    ['sig-flourish-lined.png', () => extraTruth('sig-flourish-lined.png')] as [string, () => Truth],
+  ])('%s: ink kept >= 98% with Remove lines on', async (file, getTruth) => {
+    const truth = getTruth();
+    const result = extractInk(await decodeImage(file), opts({ removeLines: true }));
+    const s = score(result, truth, loadMask(truth));
+    removeLinesMetrics[file] = s;
+    expect(s.inkKept).toBeGreaterThanOrEqual(0.98);
+    expect(s.cropError).toBeLessThanOrEqual(0.05);
+    expect(s.backgroundTransparent).toBeGreaterThan(0.99);
+  });
+
+  it('long curved flourishes (>= 40% of the ink width) are identical with and without Remove lines', async () => {
+    const truth = extraTruth('sig-flourish.png');
+    expect(truth.bbox.width).toBeGreaterThan(600);
+    const prep = prepareExtraction(await decodeImage('sig-flourish.png'));
+    const a = applyExtraction(prep, opts());
+    const b = applyExtraction(prep, opts({ removeLines: true }));
+    expect(b.imageData.data).toEqual(a.imageData.data);
+  });
+
+  it('sig-flourish-lined.png: ruled lines show without the option and are removed with it', async () => {
+    const truth = extraTruth('sig-flourish-lined.png');
+    const mask = loadMask(truth);
+    const img = await decodeImage('sig-flourish-lined.png');
+    const prep = prepareExtraction(img);
+    const slope = Math.tan((0.6 * Math.PI) / 180);
+    const near = dilateMask(mask, img.width, img.height, 8);
+    const residue = (r: ReturnType<typeof extractInk>): number => {
+      let total = 0,
+        opaque = 0;
+      for (let k = 1; k <= 9; k++) {
+        for (let x = 0; x < r.bbox.width; x++) {
+          const sx = r.bbox.x + x;
+          const sy = Math.round(60 * k + sx * slope);
+          const y = sy - r.bbox.y;
+          if (y < 0 || y >= r.bbox.height || near[sy * img.width + sx]) continue;
+          total++;
+          if (r.imageData.data[(y * r.bbox.width + x) * 4 + 3] > 0) opaque++;
+        }
+      }
+      return total ? opaque / total : 0;
+    };
+    const kept = applyExtraction(prep, opts());
+    expect(kept.inkBbox.width).toBeGreaterThan(img.width * 0.95); // lines widen the crop
+    expect(residue(kept)).toBeGreaterThan(0.5);
+
+    const removed = applyExtraction(prep, opts({ removeLines: true }));
+    expect(residue(removed)).toBeLessThan(0.01);
+    const s = score(removed, truth, mask);
+    expect(s.inkKept).toBeGreaterThanOrEqual(0.98);
+    expect(s.cropError).toBeLessThanOrEqual(0.05);
+    expect(s.backgroundTransparent).toBeGreaterThan(0.99);
+  });
+});
+
 describe('performance', () => {
   it('extracts a 2000px photo in under 300 ms', async () => {
     const src = await decodeImage('sig-gradient-noise.png');
@@ -335,7 +403,8 @@ describe.skipIf(!existsSync(REAL))('real-signature.jpg (manual check)', () => {
         const png = new PNG({ width, height });
         for (let i = 0; i < data.length; i += 4) {
           const a = data[i + 3]! / 255;
-          for (let c = 0; c < 3; c++) png.data[i + c] = Math.round(data[i + c]! * a + 220 * (1 - a));
+          for (let c = 0; c < 3; c++)
+            png.data[i + c] = Math.round(data[i + c]! * a + 220 * (1 - a));
           png.data[i + 3] = 255;
         }
         writeFileSync(join(outDir, `real-signature-lines-${removeLines}.png`), PNG.sync.write(png));

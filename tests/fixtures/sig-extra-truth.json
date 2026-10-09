@@ -46,5 +46,29 @@
     },
     "mask": "sig-initials-mask.png",
     "note": "Blue \"DM\" initials, broad pen radius 3.6-7.4 px, bottom-heavy lighting gradient."
+  },
+  "sig-flourish.png": {
+    "width": 1200,
+    "height": 600,
+    "bbox": {
+      "x": 259,
+      "y": 148,
+      "width": 753,
+      "height": 333
+    },
+    "mask": "sig-flourish-mask.png",
+    "note": "Spiky signature with two long, slightly curved, tapered flourishes (~70% and ~50% of the ink width) on plain paper. Regression fixture for Remove lines."
+  },
+  "sig-flourish-lined.png": {
+    "width": 1200,
+    "height": 600,
+    "bbox": {
+      "x": 259,
+      "y": 148,
+      "width": 753,
+      "height": 333
+    },
+    "mask": "sig-flourish-lined-mask.png",
+    "note": "Same strokes as sig-flourish.png on ruled paper (9 lines, 60px apart, 0.6 degree tilt, y = 60k + 0.0105 x, ~2px thick, grey). Truth covers the ink only."
   }
 }

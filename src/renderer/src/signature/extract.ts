@@ -346,62 +346,141 @@ export function prepareExtraction(input: RgbaImage, maxEdge: number = MAX_EDGE):
 // ---------------------------------------------------------------------------------------------
 
 /**
- * Remove ruled lines: pixels that belong to a long horizontal run (>= 10% of the width, tolerating
- * 2px gaps and slight tilt) AND whose vertical run is thin. A pen stroke crossing a line makes the
- * vertical run long, so strokes (and the line pixels sharing their columns) survive.
+ * Remove ruled lines of the paper, and nothing else. A pen stroke is never mistaken for a line:
+ * a line must be (1) straight, (2) thin and (3) unbroken across most of the SOURCE image width.
+ *
+ *  1. Find the common tilt of the ruling: shear the ink pixels by candidate slopes (|tilt| <= ~3
+ *     degrees) and pick the slope whose row histogram is sharpest (sum of squares).
+ *  2. At that slope, every strongly populated histogram bin is a candidate line. Expand it to its
+ *     band; the band must be at most `maxThickness` thick, and the ink inside it must form one
+ *     continuous run (gaps <= 3px) covering >= 60% of the image width. Long but short-of-60%
+ *     flourishes, curved strokes and tapered ends all fail this test.
+ *  3. Inside an accepted band, only pixels whose vertical run is no thicker than the line are
+ *     removed, so strokes that cross (or run alongside) the line keep every pixel of themselves.
+ *
+ * When in doubt the ink stays: faint, broken or tilted-differently lines are left alone.
  */
 function removeRuledLines(alpha: Float32Array, w: number, h: number): void {
   const long = Math.max(w, h);
-  const minRun = Math.max(8, Math.round(0.1 * w));
   const maxThickness = Math.max(3, Math.round(0.006 * long));
-  const GAP = 2;
+  const minRun = Math.round(0.6 * w);
+  const MAX_TAN = 0.05;
+  const offset = Math.ceil(MAX_TAN * w) + 2;
+  const nBins = h + 2 * offset + 2;
 
-  // Vertical run length containing each ink pixel: count down the column, then spread the total
-  // back up the run.
-  const vlen = new Uint16Array(w * h);
-  for (let x = 0; x < w; x++) {
-    let run = 0;
-    for (let y = 0; y < h; y++) {
-      if (alpha[y * w + x] > 0) vlen[y * w + x] = ++run;
-      else run = 0;
-    }
-    let full = 0;
-    for (let y = h - 1; y >= 0; y--) {
-      const i = y * w + x;
-      if (alpha[i] > 0) {
-        if (full === 0) full = vlen[i];
-        vlen[i] = full;
-      } else full = 0;
+  // Ink pixel coordinates (sampled when there are very many, only for estimating the tilt).
+  let count = 0;
+  for (let i = 0; i < alpha.length; i++) if (alpha[i] > 0) count++;
+  if (count === 0) return;
+  const xs = new Int32Array(count);
+  const ys = new Int32Array(count);
+  let n = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      if (alpha[y * w + x] > 0) {
+        xs[n] = x;
+        ys[n] = y;
+        n++;
+      }
     }
   }
+  const stride = Math.max(1, Math.ceil(count / 300000));
+  const hist = new Int32Array(nBins);
+  const binOf = (x: number, y: number, t: number): number => Math.round(y - x * t) + offset;
 
+  const sharpness = (t: number): number => {
+    hist.fill(0);
+    for (let i = 0; i < count; i += stride) hist[binOf(xs[i], ys[i], t)]++;
+    let s = 0;
+    for (let b = 0; b < nBins; b++) s += hist[b] * hist[b];
+    return s;
+  };
+  let bestT = 0;
+  let bestS = -1;
+  const coarse = 2 / w;
+  for (let t = -MAX_TAN; t <= MAX_TAN; t += coarse) {
+    const s = sharpness(t);
+    if (s > bestS) {
+      bestS = s;
+      bestT = t;
+    }
+  }
+  const centre = bestT;
+  for (let t = centre - coarse; t <= centre + coarse; t += coarse / 4) {
+    const s = sharpness(t);
+    if (s > bestS) {
+      bestS = s;
+      bestT = t;
+    }
+  }
+  const tilt = bestT;
+
+  // Full (unsampled) histogram at the chosen tilt.
+  hist.fill(0);
+  for (let i = 0; i < count; i++) hist[binOf(xs[i], ys[i], tilt)]++;
+  const smooth = new Float32Array(nBins);
+  for (let b = 1; b < nBins - 1; b++) smooth[b] = (hist[b - 1] + hist[b] + hist[b + 1]) / 3;
+  const order: number[] = [];
+  for (let b = 1; b < nBins - 1; b++) if (smooth[b] >= 0.35 * w) order.push(b);
+  order.sort((a, b) => smooth[b] - smooth[a]);
+
+  const claimed = new Uint8Array(nBins);
+  const bands: { lo: number; hi: number }[] = [];
+  for (const c of order) {
+    if (claimed[c]) continue;
+    // Band = contiguous bins around the peak that are at least 30% as populated as it.
+    const floor = 0.3 * hist[c];
+    let lo = c;
+    let hi = c;
+    while (lo > 0 && hist[lo - 1] >= floor && c - lo < maxThickness) lo--;
+    while (hi < nBins - 1 && hist[hi + 1] >= floor && hi - c < maxThickness) hi++;
+    for (let b = lo - 1; b <= hi + 1; b++) if (b >= 0 && b < nBins) claimed[b] = 1;
+    const thickness = hi - lo + 1;
+    if (thickness > maxThickness) continue; // a pen stroke is thick
+
+    // Longest continuous run of columns that contain ink inside the band.
+    let run = 0;
+    let longest = 0;
+    let gap = 0;
+    for (let x = 0; x < w; x++) {
+      let occupied = false;
+      const yBase = x * tilt - offset;
+      const y0 = Math.max(0, Math.floor(yBase + lo - 1));
+      const y1 = Math.min(h - 1, Math.ceil(yBase + hi + 1));
+      for (let y = y0; y <= y1 && !occupied; y++) {
+        const b = binOf(x, y, tilt);
+        if (b >= lo && b <= hi && alpha[y * w + x] > 0) occupied = true;
+      }
+      if (occupied) {
+        run += gap + 1;
+        gap = 0;
+        if (run > longest) longest = run;
+      } else if (run > 0 && ++gap > 3) {
+        run = 0;
+        gap = 0;
+      }
+    }
+    if (longest >= minRun) bands.push({ lo, hi });
+  }
+
+  // Remove only the line's own pixels: those whose vertical run is no thicker than the line.
   const remove = new Uint8Array(w * h);
-  for (let y = 0; y < h; y++) {
-    const row = y * w;
-    let x = 0;
-    while (x < w) {
-      if (!(alpha[row + x] > 0)) {
-        x++;
-        continue;
+  const limit = maxThickness + 3;
+  for (const { lo, hi } of bands) {
+    const thickness = hi - lo + 1;
+    for (let x = 0; x < w; x++) {
+      const yBase = x * tilt - offset;
+      const y0 = Math.max(0, Math.floor(yBase + lo - 1));
+      const y1 = Math.min(h - 1, Math.ceil(yBase + hi + 1));
+      for (let y = y0; y <= y1; y++) {
+        const b = binOf(x, y, tilt);
+        if (b < lo - 1 || b > hi + 1 || !(alpha[y * w + x] > 0)) continue;
+        let up = 0;
+        while (up < limit && y - up - 1 >= 0 && alpha[(y - up - 1) * w + x] > 0) up++;
+        let down = 0;
+        while (down < limit && y + down + 1 < h && alpha[(y + down + 1) * w + x] > 0) down++;
+        if (up + down + 1 <= thickness + 2) remove[y * w + x] = 1;
       }
-      // Grow a run, merging gaps of up to GAP pixels.
-      const start = x;
-      let end = x;
-      let gap = 0;
-      let xx = x + 1;
-      while (xx < w && gap <= GAP) {
-        if (alpha[row + xx] > 0) {
-          end = xx;
-          gap = 0;
-        } else gap++;
-        xx++;
-      }
-      if (end - start + 1 >= minRun) {
-        for (let k = start; k <= end; k++) {
-          if (alpha[row + k] > 0 && vlen[row + k] <= maxThickness) remove[row + k] = 1;
-        }
-      }
-      x = end + 1;
     }
   }
   for (let i = 0; i < alpha.length; i++) if (remove[i]) alpha[i] = 0;

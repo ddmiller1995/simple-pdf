@@ -536,7 +536,33 @@ type Look = {
   seed: number;
   /** multiplicative lighting map, 1 = neutral */
   light: (x: number, y: number) => number;
+  /** optional ruled-line coverage drawn under the ink, in `lineColor` */
+  lineCov?: Float32Array;
+  lineColor?: [number, number, number];
 };
+
+/**
+ * Spiky signature with long, slightly curved, tapered near-horizontal flourishes (the failure case
+ * for ruled-line removal): flourish A spans ~70% of the ink width, flourish B ~50%.
+ */
+function flourishPens(): Pen[] {
+  const taper =
+    (rMax: number, rMin: number): Pen['radius'] =>
+    (s, total) =>
+      rMin + (rMax - rMin) * Math.min(1, (total - s) / (0.7 * total)) * Math.min(1, 0.3 + s / 30);
+  const spike1 = curve(120, (t): Pt => [262 + 6 * t, 150 + 330 * t]);
+  const spike2 = curve(100, (t): Pt => [322 + 28 * Math.sin(Math.PI * t * 0.8), 150 + 200 * t]);
+  const flourishA = curve(500, (t): Pt => [268 + 540 * t, 345 - 45 * Math.sin(Math.PI * 0.85 * t)]);
+  const spike3 = curve(100, (t): Pt => [640 - 22 * t, 190 + 290 * t]);
+  const flourishB = curve(400, (t): Pt => [632 + 380 * t, 420 + 26 * Math.sin(Math.PI * 0.9 * t)]);
+  return [
+    { pts: spike1, radius: taper(3.2, 1.2) },
+    { pts: spike2, radius: taper(3, 1.2) },
+    { pts: flourishA, radius: taper(3.4, 0.9) },
+    { pts: spike3, radius: taper(3.2, 1.2) },
+    { pts: flourishB, radius: taper(3.2, 0.9) },
+  ];
+}
 
 function smoothstep(a: number, b: number, v: number): number {
   const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
@@ -551,10 +577,12 @@ function renderLook(cov: Float32Array, o: Look): Uint8ClampedArray {
     for (let x = 0; x < o.w; x++) {
       const i = y * o.w + x;
       const a = cov[i];
+      const l = o.lineCov && o.lineColor ? o.lineCov[i] : 0;
       const illum = o.light(x, y);
       const n = o.noiseSigma ? gauss() * o.noiseSigma : 0;
       for (let k = 0; k < 3; k++) {
-        data[i * 4 + k] = Math.round((o.paper[k] * (1 - a) + o.ink[k] * a) * illum + n);
+        const base = l ? o.paper[k] * (1 - l) + o.lineColor![k] * l : o.paper[k];
+        data[i * 4 + k] = Math.round((base * (1 - a) + o.ink[k] * a) * illum + n);
       }
       data[i * 4 + 3] = 255;
     }
@@ -734,6 +762,54 @@ function extraSignatures(): void {
     },
     { kind: 'png' },
     'Blue "DM" initials, broad pen radius 3.6-7.4 px, bottom-heavy lighting gradient.',
+  );
+
+  // 5 + 6. Regression pair for "Remove lines": long curved flourishes, plain and on ruled paper.
+  const flourish = flourishPens();
+  const covFlourish = rasterizeStamps(
+    flourish.flatMap((p) => stampPen(p, identity)),
+    W1,
+    H1,
+  );
+  // Ruled lines every 60px, tilted 0.6 degrees, ~2px thick, drawn under the ink.
+  const ruleSlope = Math.tan((0.6 * Math.PI) / 180);
+  const covLines = rasterizeStamps(
+    [60, 120, 180, 240, 300, 360, 420, 480, 540].flatMap((row) =>
+      stampPen(
+        {
+          pts: [
+            [0, row],
+            [W1, row],
+          ],
+          radius: () => 1.0,
+        },
+        ([x, y]): Pt => [x, y + x * ruleSlope],
+      ),
+    ),
+    W1,
+    H1,
+  );
+  const flourishLook = {
+    w: W1,
+    h: H1,
+    paper: [243, 240, 231] as [number, number, number],
+    ink: [24, 24, 34] as [number, number, number],
+    noiseSigma: 2,
+    light: (x: number, y: number) => 1.02 - 0.12 * ((x / W1) * 0.6 + (y / H1) * 0.4),
+  };
+  emit(
+    'sig-flourish.png',
+    covFlourish,
+    { ...flourishLook, seed: 15 },
+    { kind: 'png' },
+    'Spiky signature with two long, slightly curved, tapered flourishes (~70% and ~50% of the ink width) on plain paper. Regression fixture for Remove lines.',
+  );
+  emit(
+    'sig-flourish-lined.png',
+    covFlourish,
+    { ...flourishLook, seed: 16, lineCov: covLines, lineColor: [105, 110, 125] },
+    { kind: 'png' },
+    'Same strokes as sig-flourish.png on ruled paper (9 lines, 60px apart, 0.6 degree tilt, y = 60k + 0.0105 x, ~2px thick, grey). Truth covers the ink only.',
   );
 
   writeFileSync(join(OUT, 'sig-extra-truth.json'), JSON.stringify(truths, null, 2) + '\n');
