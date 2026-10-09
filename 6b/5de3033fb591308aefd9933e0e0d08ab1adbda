@@ -1,0 +1,53 @@
+src/renderer/src/styles.css
+  s_e8b8bce4678e6f::t_fa0340a51bb7d2 42-45,49-106,108-117
+src/renderer/src/viewer/CanvasLayer.tsx
+  s_e8b8bce4678e6f::t_963a603d2bee6e 1-3,6-69
+src/renderer/src/viewer/useViewerCommands.ts
+  s_e8b8bce4678e6f::t_d38f2a6077175b 1-40
+tests/unit/zoom.test.ts
+  s_e8b8bce4678e6f::t_43523bab10f4d7 1-22
+tests/e2e/viewer.spec.ts
+  s_e8b8bce4678e6f::t_3b7b23069aad61 1-141
+src/renderer/src/viewer/Viewer.tsx
+  s_e8b8bce4678e6f::t_dd4e2ffbaac7df 1-2,4,7-14,17-19,21-51,57-139,142-144,151-152
+  s_e8b8bce4678e6f::t_7292f50befcdbd 145-150
+src/renderer/src/viewer/viewerStore.ts
+  s_e8b8bce4678e6f::t_34fc6fae5acb68 1-28
+src/main/ipc.ts
+  s_e8b8bce4678e6f::t_b2c8e9d07bfc43 1-2
+  s_e8b8bce4678e6f::t_d40165a72a9d08 16-38
+src/renderer/src/pdf/loader.ts
+  s_e8b8bce4678e6f::t_d0ff8c1a7b335d 32
+  s_e8b8bce4678e6f::t_2e40c2a5fc55dd 8-9
+  s_e8b8bce4678e6f::t_0d059ad92db404 1,3,5-7,10-31,33,38,42-50
+src/renderer/src/viewer/zoom.ts
+  s_e8b8bce4678e6f::t_7c99b6691e72e8 1-23
+src/renderer/src/App.tsx
+  s_e8b8bce4678e6f::t_0fd59cf08f778c 1,5-9,13-54,56,58-65
+src/renderer/src/viewer/openDocument.ts
+  s_e8b8bce4678e6f::t_95f5c8ce238d04 1-72
+electron.vite.config.ts
+  s_e8b8bce4678e6f::t_c2eb5c6a0729ac 1-2,24-41,44-58,75
+  s_e8b8bce4678e6f::t_7292f50befcdbd 42-43
+src/renderer/src/toolbar/Toolbar.tsx
+  s_e8b8bce4678e6f::t_2e8df7bd66011b 1-11,13-17,20-66
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6b5de3033fb591308aefd9933e0e0d08ab1adbda",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
