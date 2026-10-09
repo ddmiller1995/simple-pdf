@@ -118,3 +118,20 @@ test('open-file event opens the document', async () => {
   await expect(page.locator('[data-page-slot]')).toHaveCount(3);
   await expect.poll(() => page.title()).toBe('simple-3page.pdf');
 });
+
+test('writePdf refuses paths that were not chosen in the save dialog', async () => {
+  const { app, page } = await launchApp({ SIMPLE_PDF_E2E: '1' });
+  try {
+    const err = await page.evaluate(() =>
+      window.api
+        .writePdf('/tmp/simple-pdf-not-approved.pdf', new TextEncoder().encode('%PDF-1.7\n'))
+        .then(
+          () => '',
+          (e) => String(e),
+        ),
+    );
+    expect(err).toContain('not chosen in the save dialog');
+  } finally {
+    await app.evaluate(({ app }) => app.exit(0)).catch(() => undefined);
+  }
+});

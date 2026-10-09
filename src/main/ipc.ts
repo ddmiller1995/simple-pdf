@@ -33,7 +33,7 @@ export function registerFileIpc(): void {
   ipcMain.handle(invoke.savePdfDialog, async (event, suggested: unknown) => {
     // E2E test hook (unpackaged builds only): skip the native dialog and save to this path.
     const hook = app.isPackaged ? undefined : process.env['SIMPLE_PDF_E2E_SAVE'];
-    if (hook) return hook;
+    if (hook) return approveWritePath(hook);
     const win = BrowserWindow.fromWebContents(event.sender);
     const options: Electron.SaveDialogOptions = {
       title: 'Save PDF',
@@ -43,13 +43,28 @@ export function registerFileIpc(): void {
     const result = win
       ? await dialog.showSaveDialog(win, options)
       : await dialog.showSaveDialog(options);
-    return result.canceled || !result.filePath ? null : result.filePath;
+    return result.canceled || !result.filePath ? null : approveWritePath(result.filePath);
   });
   ipcMain.handle(invoke.writePdf, async (_event, path: unknown, bytes: unknown) => {
     if (typeof path !== 'string' || !isAbsolute(path)) throw new Error('Invalid path');
-    if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0) throw new Error('Invalid data');
+    // Defense in depth: only write where the user chose to save via the dialog.
+    if (!approvedWritePaths.has(path)) throw new Error('Path was not chosen in the save dialog');
+    if (!(bytes instanceof Uint8Array) || !isPdfBytes(bytes)) throw new Error('Invalid data');
     await writeFileAtomic(path, bytes);
   });
+}
+
+/** Paths the user picked in the save dialog this session; writePdf refuses any other path. */
+const approvedWritePaths = new Set<string>();
+
+function approveWritePath(path: string): string {
+  approvedWritePaths.add(path);
+  return path;
+}
+
+function isPdfBytes(bytes: Uint8Array): boolean {
+  const magic = [0x25, 0x50, 0x44, 0x46, 0x2d]; // "%PDF-"
+  return bytes.byteLength > magic.length && magic.every((b, i) => bytes[i] === b);
 }
 
 let signatureStore: SignatureStore | undefined;
