@@ -1,0 +1,57 @@
+src/renderer/src/pdf/fontkitCompat.ts
+  s_e8b8bce4678e6f::t_d701a34970a5dc 1-28
+tests/helpers/font.ts
+  s_e8b8bce4678e6f::t_8d897a4d5623ba 3-4
+  s_e8b8bce4678e6f::t_66d333fc90dc86 1-2,5,14-25
+  s_e8b8bce4678e6f::t_f1f97be74a753a 6-13
+src/renderer/src/pdf/export.ts
+  s_e8b8bce4678e6f::t_d1e329392117b9 3,50
+  s_e8b8bce4678e6f::t_0ef98a38754f7d 52
+  s_e8b8bce4678e6f::t_9d77bfd8e8833a 1-2,4-20,29-49,51,53-139
+resources/fonts/SOURCE.txt
+  s_e8b8bce4678e6f::t_f0ce39fc126852 1-3
+tests/unit/export.test.ts
+  s_e8b8bce4678e6f::t_f1f97be74a753a 11,143-145,218-225,235-237,241-243,295-299,339-342,344-349,364-368
+  s_e8b8bce4678e6f::t_8f6c87132ac1fc 1,240,244,246,248-259
+  s_e8b8bce4678e6f::t_2316b28c44475a 2-10,12-142,146-217,226-234,238-239,245,247,260-294,300-338,343,350-363,369-380
+tests/unit/textLayout.test.ts
+  s_e8b8bce4678e6f::t_bec6fc5eb9cd9f 114
+  s_e8b8bce4678e6f::t_4fa5468dfd6fba 1-113,115-133
+tests/unit/coords.test.ts
+  s_e8b8bce4678e6f::t_d93fe3a1d73f40 1-161
+src/renderer/src/pdf/textLayout.ts
+  s_e8b8bce4678e6f::t_f1f97be74a753a 86
+  s_e8b8bce4678e6f::t_4ef6c32948c309 1-18,23-85,87-120,124-129,135-136,138-141,143-144
+  s_e8b8bce4678e6f::t_b9b8a81c932d75 121-123,130-134,137,142
+src/renderer/src/pdf/fontSource.ts
+  s_e8b8bce4678e6f::t_c3241bf3e9127c 1-32
+resources/fonts/OFL.txt
+  s_e8b8bce4678e6f::t_f528ccbaf74cb5 1-93
+src/renderer/src/pdf/coords.ts
+  s_e8b8bce4678e6f::t_f1f97be74a753a 77
+  s_e8b8bce4678e6f::t_6a4c3861c6e90b 4-11,13,16-76,78-115,118-127
+tests/helpers/inspectPdf.ts
+  s_e8b8bce4678e6f::t_8d897a4d5623ba 4
+  s_e8b8bce4678e6f::t_f1f97be74a753a 106-111,114-119
+  s_e8b8bce4678e6f::t_42305aab33f6d4 1-3,5-105,112-113,120-260,262-275
+  s_e8b8bce4678e6f::t_619f058bbbafda 261
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "18e3ebf47c3b9b4ded1320fe7070605d718e8edb",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
