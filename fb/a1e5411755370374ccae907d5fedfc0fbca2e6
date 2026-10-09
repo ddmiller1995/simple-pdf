@@ -1,0 +1,33 @@
+src/main/index.ts
+  s_e8b8bce4678e6f::t_c26b7895eaded5 7-10
+tests/e2e/launch.ts
+  s_e8b8bce4678e6f::t_c26b7895eaded5 1-3,11-12,20-25
+tests/e2e/smoke.spec.ts
+  s_e8b8bce4678e6f::t_c26b7895eaded5 44-48
+src/main/ipc.ts
+  s_e8b8bce4678e6f::t_1eb1249b22e33c 2,5
+tests/unit/extract.test.ts
+  s_e8b8bce4678e6f::t_9f1b78bbea5fc9 1-3
+  s_e8b8bce4678e6f::t_2b25fac0e31381 331-342
+docs/IMPLEMENTATION_PLAN.md
+  s_e8b8bce4678e6f::t_a9f597a9e14dfd 316,373-380
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fba1e5411755370374ccae907d5fedfc0fbca2e6",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
