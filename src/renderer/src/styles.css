@@ -111,6 +111,26 @@ body,
   border-bottom: 1px solid #f2b8b8;
 }
 
+.notice-banner {
+  padding: 8px 12px;
+  background: #fff4d6;
+  color: #6b4b00;
+  border-bottom: 1px solid #ecd48a;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: rgba(30, 30, 32, 0.92);
+  color: #fff;
+  z-index: 100;
+  pointer-events: none;
+}
+
 .app.dragging .empty-state,
 .app.dragging .viewer {
   outline: 3px dashed #3b82f6;

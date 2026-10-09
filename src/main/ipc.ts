@@ -1,20 +1,12 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { IPC_CHANNELS } from '../shared/ipc';
+import { writeFileAtomic } from './atomicWrite';
 import { createSignatureStore, type SignatureStore } from './signatureStore';
 
-// T0 stubs. Owners: T1/T6 fill `registerFileIpc`, T3 fills `registerSignatureIpc`.
-// Every handler throws until its owning task implements it.
-
-function notImplemented(name: string): () => never {
-  return () => {
-    throw new Error(`NotImplemented: ${name}`);
-  };
-}
-
 export function registerFileIpc(): void {
-  const { invoke, send } = IPC_CHANNELS;
+  const { invoke } = IPC_CHANNELS;
   ipcMain.handle(invoke.openPdfDialog, async (event) => {
     // E2E test hook (unpackaged builds only): skip the native dialog and open this file instead.
     const hook = app.isPackaged ? undefined : process.env['SIMPLE_PDF_E2E_OPEN'];
@@ -38,12 +30,27 @@ export function registerFileIpc(): void {
     if (typeof path !== 'string' || !path) throw new Error('Invalid path');
     return new Uint8Array(await readFile(path));
   });
-  ipcMain.handle(invoke.savePdfDialog, notImplemented('savePdfDialog'));
-  ipcMain.handle(invoke.writePdf, notImplemented('writePdf'));
-  // setDirty is fire-and-forget; T6 stores the flag for the close guard.
-  ipcMain.on(send.setDirty, () => {});
+  ipcMain.handle(invoke.savePdfDialog, async (event, suggested: unknown) => {
+    // E2E test hook (unpackaged builds only): skip the native dialog and save to this path.
+    const hook = app.isPackaged ? undefined : process.env['SIMPLE_PDF_E2E_SAVE'];
+    if (hook) return hook;
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const options: Electron.SaveDialogOptions = {
+      title: 'Save PDF',
+      defaultPath: typeof suggested === 'string' && suggested ? suggested : 'document-signed.pdf',
+      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    };
+    const result = win
+      ? await dialog.showSaveDialog(win, options)
+      : await dialog.showSaveDialog(options);
+    return result.canceled || !result.filePath ? null : result.filePath;
+  });
+  ipcMain.handle(invoke.writePdf, async (_event, path: unknown, bytes: unknown) => {
+    if (typeof path !== 'string' || !isAbsolute(path)) throw new Error('Invalid path');
+    if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0) throw new Error('Invalid data');
+    await writeFileAtomic(path, bytes);
+  });
 }
-
 
 let signatureStore: SignatureStore | undefined;
 

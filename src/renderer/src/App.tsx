@@ -5,6 +5,8 @@ import { useDocumentStore } from './state/documentStore';
 import { openDroppedFile } from './viewer/openDocument';
 import { useViewerCommands } from './viewer/useViewerCommands';
 import { useViewerStore } from './viewer/viewerStore';
+import { SaveStatus } from './save/SaveStatus';
+import { useSaveCommands } from './save/useSaveCommands';
 
 const hasFiles = (e: DragEvent): boolean => e.dataTransfer?.types.includes('Files') ?? false;
 
@@ -13,6 +15,7 @@ export function App() {
   const openError = useViewerStore((s) => s.openError);
   const [dragging, setDragging] = useState(false);
   useViewerCommands();
+  useSaveCommands();
 
   // Drop a PDF anywhere on the window to open it. The renderer has no file paths under the
   // sandbox, so the File's bytes are read here.
@@ -55,6 +58,7 @@ export function App() {
   return (
     <div className={dragging ? 'app dragging' : 'app'}>
       <Toolbar />
+      <SaveStatus />
       {openError ? (
         <div className="error-banner" role="alert" data-testid="open-error">
           <span>{openError}</span>

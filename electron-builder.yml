@@ -6,6 +6,12 @@ directories:
 files:
   - out/**
   - package.json
+fileAssociations:
+  - ext: pdf
+    name: PDF Document
+    mimeType: application/pdf
+    role: Editor
+    isPackage: false
 mac:
   target: dmg
   category: public.app-category.productivity

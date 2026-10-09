@@ -1,3 +1,4 @@
+import { saveDocument } from '../save/saveDocument';
 import { useDocumentStore } from '../state/documentStore';
 import { openWithDialog } from '../viewer/openDocument';
 import { applyZoom } from '../viewer/useViewerCommands';
@@ -63,7 +64,17 @@ export function Toolbar() {
         {doc ? `${currentPage + 1} / ${doc.pages.length}` : ''}
       </span>
 
-      <div className="toolbar-group toolbar-end">{/* T6: Save */}</div>
+      <div className="toolbar-group toolbar-end">
+        <button
+          type="button"
+          title="Save (Cmd+S)"
+          data-testid="save-button"
+          disabled={!doc || !doc.capabilities.editable}
+          onClick={() => void saveDocument()}
+        >
+          Save
+        </button>
+      </div>
     </div>
   );
 }

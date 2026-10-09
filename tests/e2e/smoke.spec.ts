@@ -28,10 +28,13 @@ test('renderer is isolated: typed bridge only, no Node', async () => {
   expect(info.api).toEqual(
     [
       'addSignature',
+      'confirmUnsaved',
       'deleteSignature',
+      'getPathForFile',
       'listSignatures',
       'onMenu',
       'onOpenFile',
+      'onSaveRequest',
       'openPdfDialog',
       'readPdf',
       'savePdfDialog',

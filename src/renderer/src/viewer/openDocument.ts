@@ -1,6 +1,7 @@
 import { useDocumentStore } from '../state/documentStore';
 import { detectCapabilities } from '../pdf/forms';
 import { getPdfPage, loadPdf } from '../pdf/loader';
+import { confirmDiscardChanges } from '../save/saveDocument';
 import type { PageInfo } from '@shared/types';
 import { useViewerStore } from './viewerStore';
 
@@ -14,6 +15,7 @@ function friendlyError(e: unknown): string {
 
 /** Load bytes into PDF.js and the store. On failure the previous document stays open. */
 export async function openPdfBytes(path: string, bytes: Uint8Array): Promise<boolean> {
+  if (!(await confirmDiscardChanges())) return false; // T6: unsaved-changes prompt
   useViewerStore.getState().setOpenError(null);
   try {
     const pdf = await loadPdf(bytes);
@@ -68,5 +70,8 @@ export async function openDroppedFile(file: File): Promise<void> {
     useViewerStore.getState().setOpenError('That file is not a PDF.');
     return;
   }
-  await openPdfBytes(file.name, new Uint8Array(await file.arrayBuffer()));
+  // T6: the preload resolves the real path (empty for synthetic Files), so Save As can default
+  // to the source directory.
+  const path = window.api.getPathForFile(file) || file.name;
+  await openPdfBytes(path, new Uint8Array(await file.arrayBuffer()));
 }
