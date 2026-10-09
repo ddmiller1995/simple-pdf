@@ -1,0 +1,73 @@
+src/renderer/src/save/saveDocument.ts
+  s_e8b8bce4678e6f::t_28f8bb1e3b7a10 1-53
+tests/e2e/save.spec.ts
+  s_e8b8bce4678e6f::t_3cdbcf7cf0393b 1-15,19-120
+  s_e8b8bce4678e6f::t_10a171cebe9be0 16-18
+tests/e2e/smoke.spec.ts
+  s_e8b8bce4678e6f::t_10a171cebe9be0 31,33,37
+src/renderer/src/save/saveStore.ts
+  s_e8b8bce4678e6f::t_e0d8ad12c9dc7d 1-20
+src/preload/index.ts
+  s_e8b8bce4678e6f::t_8e5fa25e5b49a3 25-43
+  s_e8b8bce4678e6f::t_bfe08acaacfa57 1
+src/renderer/src/save/SaveStatus.tsx
+  s_e8b8bce4678e6f::t_20f57444205970 1-39
+src/main/index.ts
+  s_e8b8bce4678e6f::t_5266b6a566d97d 2-5,16-54,73-75,89-94
+tests/unit/atomicWrite.test.ts
+  s_e8b8bce4678e6f::t_e5f395a2284518 1-17,21-23
+  s_e8b8bce4678e6f::t_869280df74b8f0 18-20
+electron-builder.yml
+  s_e8b8bce4678e6f::t_ba141369ea7704 9-14
+src/shared/ipc.ts
+  s_e8b8bce4678e6f::t_0e63a2c9653840 56,60-61,66
+  s_e8b8bce4678e6f::t_596403bb66f495 28-37,40
+  s_e8b8bce4678e6f::t_871c070d369ffe 41
+src/renderer/src/styles.css
+  s_e8b8bce4678e6f::t_79fadf14212c06 114-133
+src/renderer/src/App.tsx
+  s_e8b8bce4678e6f::t_5d386e20b0e287 18
+  s_e8b8bce4678e6f::t_b852ad740ccfe8 61
+  s_e8b8bce4678e6f::t_ac2246ea2b3ad9 8-9
+src/main/closeGuard.ts
+  s_e8b8bce4678e6f::t_054ccc61509e9d 1-110
+src/renderer/src/save/useSaveCommands.ts
+  s_e8b8bce4678e6f::t_869c31abd7e05f 1-45
+src/renderer/src/toolbar/Toolbar.tsx
+  s_e8b8bce4678e6f::t_d4862e1c7b7287 67-77
+  s_e8b8bce4678e6f::t_cfa4fb34484605 1
+src/renderer/src/viewer/openDocument.ts
+  s_e8b8bce4678e6f::t_557bfa03498bf6 4
+  s_e8b8bce4678e6f::t_7ec84bd1667726 73-76
+  s_e8b8bce4678e6f::t_5acdcc064b7830 18
+src/main/menu.ts
+  s_e8b8bce4678e6f::t_6b11739971756e 1-26,29-77
+src/renderer/src/save/outputName.ts
+  s_e8b8bce4678e6f::t_e4715586c96004 1-15
+src/main/atomicWrite.ts
+  s_e8b8bce4678e6f::t_1457664e03436c 1-15
+src/main/ipc.ts
+  s_e8b8bce4678e6f::t_c19bb24b0b59e8 2,5,9,33-42,46-52
+  s_e8b8bce4678e6f::t_869280df74b8f0 43-45
+tests/unit/outputName.test.ts
+  s_e8b8bce4678e6f::t_3aa81e41b006bc 1-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "47182f71e8e58aef1b507a918077932a058c1b72",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
