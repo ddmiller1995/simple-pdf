@@ -1,0 +1,24 @@
+tests/e2e/smoke.spec.ts
+  s_e8b8bce4678e6f::t_59c369688850cb 1-80
+tests/e2e/launch.ts
+  s_e8b8bce4678e6f::t_59c369688850cb 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "a5a8333615a050489bfc615ee31e41a40abcb56d",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
