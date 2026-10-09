@@ -7,3 +7,6 @@ release
 test-results
 playwright-report
 .vite
+
+# Personal signature photo for manual testing only (never commit)
+tests/fixtures/real-signature.*
