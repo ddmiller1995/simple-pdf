@@ -171,7 +171,8 @@ type MenuCommand = 'open'|'save'|'saveAs'|'undo'|'redo'|'zoomIn'|'zoomOut'|'zoom
 4. **Test-first for pure modules** (`coords`, `textLayout`, `export`, `forms`, `extract`, store).
 5. **Definition of done:** `pnpm typecheck && pnpm lint && pnpm test` pass, the task's acceptance criteria are met, any relevant E2E test is added and passing (`pnpm e2e`), and the §7 status table is updated with notes.
 6. **No network calls of any kind** in app code or at runtime. Never load fonts, workers or wasm from a CDN.
-7. Keep the UX minimal. If you feel the urge to add a feature, add a note to §8 instead.
+7. Run all node/pnpm commands with Node 24 (`fnm exec --using=24 -- <cmd>`), e.g. `fnm exec --using=24 -- pnpm test`. The shell default may still be Node 20.
+8. Keep the UX minimal. If you feel the urge to add a feature, add a note to §8 instead.
 
 ### Execution settings (token budget)
 
@@ -302,6 +303,7 @@ T0 ──┬── T1 ──┬── T5 ──┬── T7
 | Task | Status | Branch | Agent/Owner | Notes |
 |---|---|---|---|---|
 | T0 Scaffold & contracts | done | `task/T0-scaffold` | sonnet-5.5 / high | Scaffold, security, contracts, store, stubs, fixtures and smoke E2E done. All checks green. See §8 for deviations and gotchas. |
+| T0.1 Node 24 upgrade | review | `task/T0.1-node24` | sonnet-5.5 / medium | Node >=24 enforced; pdfjs-dist 6, vitest 5, eslint 10, TS 6, @types/node 24. All checks green. See §8. |
 | T1 Viewer | todo | | | |
 | T2 Coords/text/export | todo | | | |
 | T3 Signature extraction & library | todo | | | |
@@ -318,7 +320,9 @@ Statuses: `todo` → `in-progress` → `review` → `done` (or `blocked: <reason
 ## 8. Change log and open questions
 
 - _(Record any contract change, cross-ownership edit, or deferred idea here: date, task, what, why.)_
-- **2026-10-09 · T0 · Pinned versions (deviation from "latest").** The environment has Node 20.20, so versions that require Node 22+ were avoided: `pdfjs-dist@5.6.205` (6.x needs Node >=22.13; matters because T2/T4 round-trip tests run PDF.js's legacy build under Node), `vitest@4.1.11` (5.x needs Node 22), `vite@7.3.7` (electron-vite 5 supports vite <=7), `@vitejs/plugin-react@5.2.0`, `typescript@5.9.3`, `eslint@9.39.5`. Others: `electron@44.7.0`, `electron-vite@5.0.0`, `react@19.3.0`, `@cantoo/pdf-lib@2.11.1`, `@pdf-lib/fontkit@1.1.1`, `zustand@5.0.15`, `@playwright/test@1.64.0`. Electron's own `engines` says Node >=22.12 but only its binary is used and it runs fine.
+- **2026-10-09 · T0 · Pinned versions (deviation from "latest"). SUPERSEDED by T0.1 below (Node 24).** The environment has Node 20.20, so versions that require Node 22+ were avoided: `pdfjs-dist@5.6.205` (6.x needs Node >=22.13; matters because T2/T4 round-trip tests run PDF.js's legacy build under Node), `vitest@4.1.11` (5.x needs Node 22), `vite@7.3.7` (electron-vite 5 supports vite <=7), `@vitejs/plugin-react@5.2.0`, `typescript@5.9.3`, `eslint@9.39.5`. Others: `electron@44.7.0`, `electron-vite@5.0.0`, `react@19.3.0`, `@cantoo/pdf-lib@2.11.1`, `@pdf-lib/fontkit@1.1.1`, `zustand@5.0.15`, `@playwright/test@1.64.0`. Electron's own `engines` says Node >=22.12 but only its binary is used and it runs fine.
+- **2026-10-09 · T0.1 · Node 24 upgrade.** `engines.node >=24` in package.json and `engine-strict=true` in `.npmrc`. Changes: `pdfjs-dist` 5.6.205 → 6.3.289, `vitest` 4.1.11 → 5.0.1, `eslint` 9.39.5 → 10.11.0, `@eslint/js` 9.39.5 → 10.0.1 (latest on npm; there is no 10.11), `typescript` 5.9.3 → 6.0.3, `@types/node` 20.19.43 → 24.13.6, `vite` 7.3.7 → 7.3.6 (7.3.7 was published 2026-10-06, inside the 2-week window). Held back: `vite` stays on 7.x because `electron-vite@5.0.0` (latest stable) only supports vite <=7; `@vitejs/plugin-react` stays 5.2.0 because 6.x needs vite 8; `typescript` stays 6.0.x because `typescript-eslint` 8.70 requires TS <6.1 (7.x unsupported); versions newer than 2026-09-25 skipped (eslint 10.12, vitest 5.0.2/5.0.3).
+  - Gotchas: TS 6 removed `baseUrl` use for paths, so `tsconfig.web.json` dropped `baseUrl` and uses `./`-relative `paths`. pdfjs-dist 6 keeps `PageViewport` as a type export, `legacy/build/pdf.mjs` (works under Node 24 vitest), `build/pdf.worker.min.mjs?url`, and the `cmaps/`, `standard_fonts/`, `wasm/` dirs (wasm now also has `quickjs-eval.*`, `qcms_bg.wasm`); verified by a throwaway test, not committed. Always run commands via `fnm exec --using=24 --`.
 - **2026-10-09 · T0 · Contract additions (nothing removed or renamed).**
   - `src/shared/ipc.ts`: added `IPC_CHANNELS` (channel-name constants shared by main and preload). `Api` and `MenuCommand` are exactly as in §4.3. T1/T3/T6 must register handlers on these channel names.
   - Store (`state/documentStore.ts`): added `setZoom(zoom)` (zoom had no setter), `markSaved(outputPath?)` (optional path sets `doc.outputPath`), and an internal `savedSnapshot` field. `dirty` is computed by identity against `savedSnapshot`, so undoing back to the saved state clears dirty and undoing past it sets it again. Exported types `Tool`, `DocState`, `Snapshot`. History is capped at 200 entries. There is no keystroke coalescing: T4/T5 should add it if per-keystroke undo is too fine-grained.
