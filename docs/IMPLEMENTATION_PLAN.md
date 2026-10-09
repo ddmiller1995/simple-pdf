@@ -312,7 +312,7 @@ T0 ──┬── T1 ──┬── T5 ──┬── T7
 | T0 Scaffold & contracts | done | `task/T0-scaffold` | sonnet-5.5 / high | Scaffold, security, contracts, store, stubs, fixtures and smoke E2E done. All checks green. See §8 for deviations and gotchas. |
 | T0.1 Node 24 upgrade | done | `task/T0.1-node24` | sonnet-5.5 / medium | Node >=24 enforced; pdfjs-dist 6, vitest 5, eslint 10, TS 6, @types/node 24. All checks green. See §8. |
 | T1 Viewer | done | `task/T1-viewer` | sonnet-5.5 / medium | Loader, viewer, Open, drag-drop, zoom, page indicator. 5 E2E tests. Orchestrator visually verified acroform + rotated rendering. |
-| T2 Coords/text/export | todo | | | |
+| T2 Coords/text/export | done | `task/T2-export` | sonnet-5.5 / high | coords, textLayout, export, inspectPdf. Round-trips at ±1pt for rot 0/90/180/270, CropBox, A4. 84 tests. |
 | T3 Signature extraction & library | todo | | | |
 | T4 AcroForms | review → partially done | `task/T4-forms` | sonnet-5.5 / medium | forms.ts + FormLayer merged; unit criteria met. E2E form fill + view-only banner deferred to T6/T7. |
 | T5 Overlay editing | todo | | | |
@@ -358,11 +358,18 @@ Statuses: `todo` → `in-progress` → `review` → `done` (or `blocked: <reason
   - E2E hook: `SIMPLE_PDF_E2E_OPEN=<path>` makes `openPdfDialog` return that file (ignored when packaged).
   - **For T6:** dropped files only give a bare file name as `sourcePath`. Use Electron `webUtils.getPathForFile(file)` in the preload to get the real path (contract addition to `Api`), so Save As can default to the source directory.
 - **2026-10-09 · T4 · Forms notes.**
-  - `export.ts` must save with `pdfDoc.save({ updateFieldAppearances: false })` after `applyFormValues`, or a field left unflattened makes the save throw. (T2: check this is the case.)
+  - `export.ts` saves with `updateFieldAppearances: false` so unflattened (non-WinAnsi) fields keep their NeedAppearances and aren't regenerated with a WinAnsi font. (The claimed throw didn't reproduce; an integration test in `export.test.ts` covers forms + overlays together.)
   - FormLayer reads field names from the widget annotation's `fieldName`. Typing coalesces to one undo step per field focus.
   - Values with non-WinAnsi characters are not flattened (pdf-lib would turn them into `?`). The field stays filled and unflattened, and `NeedAppearances` is set. A follow-up could use the Noto Sans font from T2 for appearances.
   - XFA and unparseable detection are tested with mocked PDF.js docs (there is no XFA fixture).
   - **For T5:** FormLayer is `pointer-events: none` with `auto` on widgets. OverlayLayer must also pass pointer events through outside overlays (except with the Text tool active), or form inputs won't get clicks.
+- **2026-10-09 · T2 · Export notes.**
+  - New `pdf/fontSource.ts` (`FONT_FAMILY` = "Noto Sans", `FONT_URL`, `getFontBytes`, `setFontBytes`) and `pdf/fontkitCompat.ts`. The shim works around `@cantoo/pdf-lib` 2.11.1 + `@pdf-lib/fontkit` 1.1.1 failing every `subset: true` embed ("reading 'pos'"); subsetting adds <60 KB instead of 600 KB.
+  - Font: Noto Sans Regular (hinted TTF) from notofonts, with `OFL.txt` and `SOURCE.txt` in `resources/fonts/`.
+  - `ExportInput.pages` is ignored (geometry comes from the file). Extra helpers in `coords.ts`: `userRectToVisualRect`, `visualPointToUser`, `PageBox`, point converters.
+  - `tests/helpers/*` must use relative imports (`tsconfig.e2e.json` includes them without aliases).
+  - `inspectPdf(bytes, { scale = 1 })` → `{ numPages, pages, fieldObjects, allText }`. Each page has `rotation, view, width, height, viewport, text[], images[], fields[]`. Text items carry `str, transform, user, screen{x,y}, angleDeg, mirrored, sizePx, widthPx`; images carry `user, screen, corners, upright`. `findText(page, needle)`. `tests/helpers/font.ts`: `useNotoSans()` (beforeAll), `notoSansBytes()`.
+  - **For T5 (screen/export parity):** call `await initTextLayout()` at startup. Add `@font-face` using `FONT_URL` / `FONT_FAMILY`. TextBox CSS: `line-height: 1.2; font-kerning: none; font-variant-ligatures: none; padding: 0; white-space: pre`. Render the lines from `layoutText(text, fs, widthPt)`. The rect's top-left is the top-left of line 0, and the baseline is `baselineOffset(fs)` (≈ 0.988·fs) below it. Use only `screenRectToPdfRect` / `pdfRectToScreenRect` for conversions.
 - **2026-10-09 · Orchestrator · Integration fix.** CanvasLayer now uses `AnnotationMode.ENABLE` for view-only docs or docs without fields (FormLayer renders nothing then, so the bitmap must paint the fields), and `ENABLE_FORMS` otherwise. `.claude/` (agent worktrees) is excluded from ESLint and git.
 - **2026-10-09 · Note.** `rotated.pdf`'s label "Upright text reads normally in the rotated view" is misleading: the content is drawn unrotated, so it appears sideways on /Rotate pages (which is the correct rendering). Fix the wording next time `make-fixtures.ts` is touched outside the signature section.
 - Deferred ideas: draw a signature with the trackpad (`signature_pad`), "insert today's date" button, checkmark stamp, page thumbnails sidebar, print, find-in-document, HEIC import.

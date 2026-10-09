@@ -378,3 +378,30 @@ describe('export: forms hook', () => {
     expect(mock).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('exportPdf with real AcroForm values (T2 + T4 integration)', () => {
+  it('saves when a field cannot be flattened, alongside overlays', async () => {
+    const sourceBytes = loadFixture('acroform.pdf');
+    const overlay: TextOverlay = {
+      kind: 'text',
+      id: 't1',
+      pageIndex: 0,
+      rect: { x: 300, y: 100, width: 200, height: 20 },
+      text: 'Signed overlay',
+      fontSize: 12,
+      color: [0, 0, 0],
+    };
+    const out = await exportPdf({
+      sourceBytes,
+      overlays: [overlay],
+      formValues: { fullName: 'Ωmega Жук', country: 'Brazil' },
+      pages: [],
+    });
+    const pdf = await inspectPdf(out);
+    expect(pdf.allText).toContain('Signed overlay');
+    expect(pdf.allText).toContain('Brazil');
+    const form = (await PDFDocument.load(out)).getForm();
+    expect(form.getFields().map((f) => f.getName())).toEqual(['fullName']);
+    expect(form.getTextField('fullName').getText()).toBe('Ωmega Жук');
+  });
+});

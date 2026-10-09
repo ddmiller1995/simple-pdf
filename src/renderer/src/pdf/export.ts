@@ -64,7 +64,9 @@ export async function exportPdf(input: ExportInput): Promise<Uint8Array> {
     drawImage(pdfPages[o.pageIndex]!, o, await image);
   }
 
-  return doc.save();
+  // Fields applyFormValues could not flatten (e.g. non-WinAnsi text) carry NeedAppearances so
+  // viewers draw them; don't let pdf-lib regenerate their appearances with a WinAnsi font.
+  return doc.save({ updateFieldAppearances: false });
 }
 
 function inRange(o: Overlay, pages: PDFPage[]): boolean {
