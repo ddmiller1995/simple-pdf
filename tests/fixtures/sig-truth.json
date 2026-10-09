@@ -1,0 +1,22 @@
+{
+  "width": 1200,
+  "height": 600,
+  "note": "bbox is the inclusive pixel extent of ink with coverage > 0.5. truth-mask: white = certain ink (coverage >= 0.99). lineRows (y of the 2px ruled lines) apply to sig-lined only.",
+  "bbox": {
+    "x": 154,
+    "y": 160,
+    "width": 832,
+    "height": 315
+  },
+  "lineRows": [
+    60,
+    120,
+    180,
+    240,
+    300,
+    360,
+    420,
+    480,
+    540
+  ]
+}
