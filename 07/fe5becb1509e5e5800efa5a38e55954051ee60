@@ -1,0 +1,68 @@
+src/main/ipc.ts
+  s_e8b8bce4678e6f::t_7d186687711772 23-36,39-46
+src/renderer/src/signature/SignatureImportDialog.tsx
+  s_e8b8bce4678e6f::t_164b081b2c9523 102-103
+  s_e8b8bce4678e6f::t_4d2a90abadfe9f 129
+  s_e8b8bce4678e6f::t_ddc22a0bc3e3f7 81,298-301
+  s_e8b8bce4678e6f::t_2a02ca77950874 161
+  s_e8b8bce4678e6f::t_6d1e52d8d9f981 1-80,82-101,104-128,130-160,162-297,302-377,379-386
+  s_e8b8bce4678e6f::t_bab58b80147029 378
+tests/helpers/sigFixtures.ts
+  s_e8b8bce4678e6f::t_b39b36d02e6d63 89
+  s_e8b8bce4678e6f::t_19d677b961dca0 1-59,62-68,71-88,90-129
+  s_e8b8bce4678e6f::t_ddc22a0bc3e3f7 60-61,69-70
+src/renderer/src/signature/signature.css
+  s_e8b8bce4678e6f::t_d0f99c1af72c1e 1-203
+scripts/make-fixtures.ts
+  s_e8b8bce4678e6f::t_633d93a5201aa7 413-502,507-741
+  s_e8b8bce4678e6f::t_e77e8f87e67994 751
+  s_e8b8bce4678e6f::t_5ac4deedc93677 11
+  s_e8b8bce4678e6f::t_ddc22a0bc3e3f7 503-506
+tests/fixtures/sig-extra-truth.json
+  s_e8b8bce4678e6f::t_e5d4a05b0f0682 1-50
+tests/fixtures/README.md
+  s_e8b8bce4678e6f::t_93f9ffd3baf9a2 34-47
+src/main/signatureStore.ts
+  s_e8b8bce4678e6f::t_4c1f7fa4018b70 1-3,6-7,9-21,24,30-49,52-151
+  s_e8b8bce4678e6f::t_ddc22a0bc3e3f7 25-29
+tests/unit/signatureStore.test.ts
+  s_e8b8bce4678e6f::t_07b5c5583dbea9 1-51,58-101,105-109,115-138
+  s_e8b8bce4678e6f::t_ddc22a0bc3e3f7 52-57,102-104,110-114
+tests/unit/extract.test.ts
+  s_e8b8bce4678e6f::t_86b16e9b5fec08 1-79,82-234,237-331
+  s_e8b8bce4678e6f::t_5a4e32c73028ec 235-236
+  s_e8b8bce4678e6f::t_ddc22a0bc3e3f7 80-81
+src/renderer/src/signature/extract.ts
+  s_e8b8bce4678e6f::t_602b0e67cfe88b 280-305
+  s_e8b8bce4678e6f::t_6c58b95a4b469a 158-159
+  s_e8b8bce4678e6f::t_f081ac59a351d4 332-341
+  s_e8b8bce4678e6f::t_945fc868b524a3 1-9,16,21-22,24,26-30,32-33,42-74,76,79-157,160-279,306-331,342-358,361-364,367-481,483-554
+  s_e8b8bce4678e6f::t_7a304c7887b7fe 75,77-78
+  s_e8b8bce4678e6f::t_ee1a7fd3dd4bad 359-360,365-366
+  s_e8b8bce4678e6f::t_486a0c5a563beb 482
+package.json
+  s_e8b8bce4678e6f::t_98e044bb425a8b 41
+src/renderer/src/signature/SignaturePanel.tsx
+  s_e8b8bce4678e6f::t_f07e7cfb3c0aba 1-148
+pnpm-lock.yaml
+  s_e8b8bce4678e6f::t_aea92d52afb216 33-35
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "07fe5becb1509e5e5800efa5a38e55954051ee60",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
