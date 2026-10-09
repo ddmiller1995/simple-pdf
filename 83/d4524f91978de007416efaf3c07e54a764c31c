@@ -1,0 +1,41 @@
+src/main/ipc.ts
+  s_e8b8bce4678e6f::t_be5f341f2e39d9 1-28
+src/main/menu.ts
+  s_e8b8bce4678e6f::t_be5f341f2e39d9 1-5,9
+  s_e8b8bce4678e6f::t_dffead323110e6 6-8
+src/main/security.ts
+  s_e8b8bce4678e6f::t_be5f341f2e39d9 1-36,40-56
+  s_e8b8bce4678e6f::t_dffead323110e6 37-39
+src/preload/index.ts
+  s_e8b8bce4678e6f::t_685c632d3e1716 1-28
+src/shared/ipc.ts
+  s_e8b8bce4678e6f::t_685c632d3e1716 1-52
+src/renderer/env.d.ts
+  s_e8b8bce4678e6f::t_685c632d3e1716 1-8
+src/main/signatureStore.ts
+  s_e8b8bce4678e6f::t_dffead323110e6 9-11
+  s_e8b8bce4678e6f::t_be5f341f2e39d9 1-8,12-17
+src/shared/types.ts
+  s_e8b8bce4678e6f::t_685c632d3e1716 1-51
+src/main/index.ts
+  s_e8b8bce4678e6f::t_be5f341f2e39d9 1-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "83d4524f91978de007416efaf3c07e54a764c31c",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
