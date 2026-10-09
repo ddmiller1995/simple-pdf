@@ -1,0 +1,56 @@
+tsconfig.base.json
+  s_e8b8bce4678e6f::t_972b324bad1b2b 1-17
+tsconfig.e2e.json
+  s_e8b8bce4678e6f::t_fd75b5f81115aa 1-8
+electron-builder.yml
+  s_e8b8bce4678e6f::t_ab1729de3b0648 1-11
+playwright.config.ts
+  s_e8b8bce4678e6f::t_972b324bad1b2b 1-11
+tsconfig.node.json
+  s_e8b8bce4678e6f::t_fd75b5f81115aa 14
+  s_e8b8bce4678e6f::t_972b324bad1b2b 1-13,15-16
+package.json
+  s_e8b8bce4678e6f::t_fd75b5f81115aa 13
+  s_e8b8bce4678e6f::t_418ad8bc5b1c82 19-20
+  s_e8b8bce4678e6f::t_34524dcbae36f7 1-12,14-18,21-58
+tsconfig.test.json
+  s_e8b8bce4678e6f::t_972b324bad1b2b 1-13
+eslint.config.mjs
+  s_e8b8bce4678e6f::t_972b324bad1b2b 1-31
+electron.vite.config.ts
+  s_e8b8bce4678e6f::t_972b324bad1b2b 1-40
+tsconfig.json
+  s_e8b8bce4678e6f::t_972b324bad1b2b 1-3,16-17
+  s_e8b8bce4678e6f::t_fd75b5f81115aa 4-15
+.gitignore
+  s_e8b8bce4678e6f::t_b9025ccae461ae 1-9
+.prettierrc
+  s_e8b8bce4678e6f::t_972b324bad1b2b 1-6
+tsconfig.web.json
+  s_e8b8bce4678e6f::t_972b324bad1b2b 1-14
+.prettierignore
+  s_e8b8bce4678e6f::t_972b324bad1b2b 1-6
+vitest.config.ts
+  s_e8b8bce4678e6f::t_972b324bad1b2b 1-15
+pnpm-lock.yaml
+  s_e8b8bce4678e6f::t_07e02faf03f47e 1-4867
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4da616a6c3dee8d3418a992ab9d83b4e020f57bb",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
