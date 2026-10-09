@@ -301,7 +301,7 @@ T0 ──┬── T1 ──┬── T5 ──┬── T7
 
 | Task | Status | Branch | Agent/Owner | Notes |
 |---|---|---|---|---|
-| T0 Scaffold & contracts | todo | | | |
+| T0 Scaffold & contracts | review | `task/T0-scaffold` | sonnet-5.5 / high | Scaffold, security, contracts, store, stubs, fixtures and smoke E2E done. All checks green. See §8 for deviations and gotchas. |
 | T1 Viewer | todo | | | |
 | T2 Coords/text/export | todo | | | |
 | T3 Signature extraction & library | todo | | | |
@@ -318,6 +318,26 @@ Statuses: `todo` → `in-progress` → `review` → `done` (or `blocked: <reason
 ## 8. Change log and open questions
 
 - _(Record any contract change, cross-ownership edit, or deferred idea here: date, task, what, why.)_
+- **2026-10-09 · T0 · Pinned versions (deviation from "latest").** The environment has Node 20.20, so versions that require Node 22+ were avoided: `pdfjs-dist@5.6.205` (6.x needs Node >=22.13; matters because T2/T4 round-trip tests run PDF.js's legacy build under Node), `vitest@4.1.11` (5.x needs Node 22), `vite@7.3.7` (electron-vite 5 supports vite <=7), `@vitejs/plugin-react@5.2.0`, `typescript@5.9.3`, `eslint@9.39.5`. Others: `electron@44.7.0`, `electron-vite@5.0.0`, `react@19.3.0`, `@cantoo/pdf-lib@2.11.1`, `@pdf-lib/fontkit@1.1.1`, `zustand@5.0.15`, `@playwright/test@1.64.0`. Electron's own `engines` says Node >=22.12 but only its binary is used and it runs fine.
+- **2026-10-09 · T0 · Contract additions (nothing removed or renamed).**
+  - `src/shared/ipc.ts`: added `IPC_CHANNELS` (channel-name constants shared by main and preload). `Api` and `MenuCommand` are exactly as in §4.3. T1/T3/T6 must register handlers on these channel names.
+  - Store (`state/documentStore.ts`): added `setZoom(zoom)` (zoom had no setter), `markSaved(outputPath?)` (optional path sets `doc.outputPath`), and an internal `savedSnapshot` field. `dirty` is computed by identity against `savedSnapshot`, so undoing back to the saved state clears dirty and undoing past it sets it again. Exported types `Tool`, `DocState`, `Snapshot`. History is capped at 200 entries. There is no keystroke coalescing: T4/T5 should add it if per-keystroke undo is too fine-grained.
+  - `viewer/layerProps.ts` exports `LayerProps = { page: PageInfo; viewport: PageViewport }` used by PageView and all three layers (§4.5).
+  - `pdf/forms.ts` stubs: `detectCapabilities` returns `{ editable: true, hasAcroForm: false }` and `applyFormValues` is a no-op, so T1/T2 can call them before T4 lands. All other stubs throw `NotImplemented`.
+- **2026-10-09 · T0 · Gotchas for later tasks.**
+  - `pdfjs-dist@5.6` exports `PageViewport` as a TYPE only (not constructible). T2's coords tests must get a real viewport from `pdfPage.getViewport()` (legacy build, Node), and the T0 `Viewer` stub uses a hand-made object cast to `PageViewport`.
+  - No `"type": "module"` in package.json: sandboxed preload scripts must be CommonJS, and electron-vite emits `out/preload/index.js` (CJS) only in that mode. Keep the preload dependency-free (it may only `require('electron')`).
+  - Electron 44 has no install script. `package.json` has `"postinstall": "node node_modules/electron/install.js"` to fetch the binary. A fresh `pnpm install` therefore needs network once (allowed).
+  - Dev mode (`pnpm dev`) relaxes the CSP via a dev-only Vite plugin (`'unsafe-inline'` scripts for the React Refresh preamble, plus `ws://localhost:*` for HMR). The built app uses the strict CSP from §6 T0 exactly. Verified: in the built app, `fetch`/XHR of local `file://` assets works under the strict CSP, and `https://` requests fail with `ERR_BLOCKED_BY_CLIENT`.
+  - Path aliases `@renderer/*` and `@shared/*` work in the renderer, Vitest and tsc. Main and preload use relative imports for shared code.
+  - Typecheck is four tsconfigs (`node`, `web`, `test`, `e2e`) because the environments differ (DOM vs Node). Unit tests live in `tests/unit` and can import renderer code. Playwright specs live in `tests/e2e` (DOM lib, for `page.evaluate`).
+  - E2E: `pnpm e2e` builds, then runs Playwright. `tests/e2e/launch.ts` exports `launchApp(env?)`, which starts the BUILT app (`electron.launch({ args: [repoRoot] })`, with `ELECTRON_RENDERER_URL` cleared so it loads `out/renderer/index.html`) and returns `{ app, page }`. Reuse it; pass test-hook env vars via `env`.
+  - Unit tests load fixtures through `tests/helpers/fixtures.ts` (`loadFixture`, `loadPng`, `loadSigTruth`). The §9 `tests/helpers/inspectPdf.ts` round-trip checker was NOT created in T0 (no owner is named for it); T2 should create it.
+- **2026-10-09 · T0 · Fixtures.**
+  - `qpdf` is not installed, so `encrypted.pdf` was created with `@cantoo/pdf-lib`'s `encrypt()` (AES-256, empty user password + owner password). PDF.js opens it; `PDFDocument.load` throws `EncryptedPDFError`, which is exactly the detection T4 needs. Nothing was downloaded.
+  - Extras beyond the plan: `encrypted-userpw.pdf` (user password `secret`, PDF.js throws `PasswordException`), an option list (`interests`) in `acroform.pdf`, and `sig-truth.json` + `sig-truth-mask.png` (ground truth for T3's tests). Encrypted PDFs are not byte-deterministic across regenerations (random IVs); everything else is.
+  - `tests/fixtures/real-signature.jpg` (2.7 MB) was dropped in by the human during T0. It is NOT committed by T0 and no test references it; the human decides whether to commit it.
+  - `resources/fonts/NotoSans-Regular.ttf` is not added: T2 owns `resources/fonts/*`. `electron-builder.yml` is a minimal placeholder so `pnpm dist:mac` is a valid command; T8 owns the real config (`dist:mac` was not run in T0).
 - Deferred ideas: draw a signature with the trackpad (`signature_pad`), "insert today's date" button, checkmark stamp, page thumbnails sidebar, print, find-in-document, HEIC import.
 
 ---
