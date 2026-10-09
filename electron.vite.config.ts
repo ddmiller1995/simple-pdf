@@ -1,3 +1,5 @@
+import { createReadStream, existsSync, statSync } from 'node:fs';
+import { cp } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
@@ -19,6 +21,41 @@ function devCsp(): Plugin {
   };
 }
 
+/**
+ * Serves/copies PDF.js runtime assets (cmaps, standard fonts, wasm, icc) from `pdfjs-dist` as
+ * local files under `<renderer root>/pdfjs/`. Never fetched from a CDN. The quickjs scripting
+ * sandbox is deliberately excluded (PDF scripting is disabled).
+ */
+function pdfjsAssets(): Plugin {
+  const dirs = ['cmaps', 'standard_fonts', 'wasm', 'iccs'];
+  const root = resolve('node_modules/pdfjs-dist');
+  let outDir = '';
+  return {
+    name: 'simple-pdf:pdfjs-assets',
+    configResolved(config) {
+      outDir = resolve(config.root, config.build.outDir);
+    },
+    configureServer(server) {
+      server.middlewares.use('/pdfjs', (req, res, next) => {
+        const rel = decodeURIComponent((req.url ?? '').split('?')[0] ?? '');
+        const file = resolve(root, '.' + rel);
+        if (rel.includes('..') || !dirs.some((d) => file.startsWith(resolve(root, d))))
+          return next();
+        if (!existsSync(file) || !statSync(file).isFile()) return next();
+        createReadStream(file).pipe(res);
+      });
+    },
+    async writeBundle() {
+      for (const d of dirs) {
+        await cp(resolve(root, d), resolve(outDir, 'pdfjs', d), {
+          recursive: true,
+          filter: (src) => !/quickjs-eval/.test(src),
+        });
+      }
+    },
+  };
+}
+
 const alias = {
   '@renderer': resolve('src/renderer/src'),
   '@shared': resolve('src/shared'),
@@ -35,6 +72,6 @@ export default defineConfig({
   },
   renderer: {
     resolve: { alias },
-    plugins: [react(), devCsp()],
+    plugins: [react(), devCsp(), pdfjsAssets()],
   },
 });
