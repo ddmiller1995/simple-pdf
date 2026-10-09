@@ -1,6 +1,6 @@
 import type { ImageOverlay } from '@shared/types';
 
-// T0 stub (T5 owns).
+/** Signature image filling its positioned parent (aspect is locked by the geometry helpers). */
 export function ImageBox({ overlay }: { overlay: ImageOverlay }) {
-  return <img data-overlay-id={overlay.id} src={overlay.pngDataUrl} alt="Signature" />;
+  return <img className="image-box" src={overlay.pngDataUrl} alt="Signature" draggable={false} />;
 }

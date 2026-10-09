@@ -314,9 +314,9 @@ T0 ──┬── T1 ──┬── T5 ──┬── T7
 | T1 Viewer | done | `task/T1-viewer` | sonnet-5.5 / medium | Loader, viewer, Open, drag-drop, zoom, page indicator. 5 E2E tests. Orchestrator visually verified acroform + rotated rendering. |
 | T2 Coords/text/export | done | `task/T2-export` | sonnet-5.5 / high | coords, textLayout, export, inspectPdf. Round-trips at ±1pt for rot 0/90/180/270, CropBox, A4. 84 tests. |
 | T3 Signature extraction & library | done | `task/T3-signatures`, `task/T3b-remove-lines` | sonnet-5.5 / high | Extraction, store, IPC, dialog, panel. 10 synthetic fixtures at ≥98.6% ink kept / 100% bg removed with Remove lines on. Real photo verified visually (identical with/without Remove lines). |
-| T4 AcroForms | review → partially done | `task/T4-forms` | sonnet-5.5 / medium | forms.ts + FormLayer merged; unit criteria met. E2E form fill + view-only banner deferred to T6/T7. |
-| T5 Overlay editing | todo | | | |
-| T6 Save & lifecycle | todo | | | |
+| T4 AcroForms | done | `task/T4-forms` | sonnet-5.5 / medium | forms.ts + FormLayer merged; unit criteria met. E2E form fill + view-only banner covered by T6's save.spec. |
+| T5 Overlay editing | done | `task/T5-overlays` | sonnet-5.5 / medium | Text tool, signature drag/click placement, select/move/resize, font size, undo/redo, shortcuts. 14 unit + 2 E2E tests (export round-trip ±1pt on a 90° page). |
+| T6 Save & lifecycle | done | `task/T6-save` | sonnet-5.5 / medium | Save/Save As (atomic), unsaved prompt on close/quit/open-another, menus, open-file, view-only banner. Covers T4's deferred E2E. Orchestrator restricted writePdf to dialog-approved paths. |
 | T7 E2E & polish | todo | | | |
 | T8 Packaging | todo | | | |
 
@@ -379,6 +379,24 @@ Statuses: `todo` → `in-progress` → `review` → `done` (or `blocked: <reason
   - **For T5:** `<SignaturePanel onPick?(sig) onAdded?(sig) className? />` (self-contained list/add/delete; also exports `useSignatures()`), `<SignatureImportDialog open onClose onSaved?(sig) />`. Both import `signature.css`. T5 adds drag inside `SignaturePanel.tsx`.
 - **2026-10-09 · T3b · Remove lines rewrite.** `removeRuledLines` now estimates the common tilt (up to ~3°) by shearing, accepts a band only if it is thin (≤0.6% of the long edge) with one continuous run covering ≥60% of the source width (gaps ≤3 px), and inside a band removes only pixels whose vertical run is no thicker than the line, so crossing strokes survive. When in doubt, keep the ink. Timing with Remove lines is ~98 ms at 2000px. New fixtures: `sig-flourish.png`, `sig-flourish-lined.png`.
 - **2026-10-09 · Orchestrator · E2E isolation.** `SIMPLE_PDF_USER_DATA` (unpackaged only) overrides `userData`. `launchApp` gives each launch a fresh temp profile unless one is passed, so E2E never touches the real signature library. The stale smoke test that expected `listSignatures` to be unimplemented now asserts an empty isolated library. `extract.test.ts`'s real-photo test writes previews when `SIG_PREVIEW_DIR` is set.
+- **2026-10-09 · T5 · Overlay notes.**
+  - Text editing uses a draft in `overlays/editStore.ts`: one edit session = one undo step, and empty boxes never enter the document. Boxes auto-grow to the page edge, then wrap.
+  - On rotated pages a box's visual width isn't `rect.width`, so all drag/resize/fit maths runs in screen space (`overlays/geometry.ts`) and converts through `coords`.
+  - `updateOverlay` takes a typed `OverlayPatch`. The app mounts immediately; text overlays wait for the font via `overlays/textReady.ts`.
+  - The Text tool covers the whole page while active (so it blocks form-field clicks then); in Select mode the overlay layer passes clicks through. Clicking empty space deselects.
+  - Font size is a dropdown (8–36pt).
+  - Test hook: `window.__simplePdfTest.exportCurrent()` / `.state()` (`src/renderer/src/testHook.ts`), loaded only when a Playwright init script sets `window.__SIMPLE_PDF_E2E__`.
+  - `useEditCommands` handles `undo`/`redo`/`delete`/`toolSelect`/`toolText` from both keydown and `onMenu`, falling back to native `execCommand` inside text fields.
+- **2026-10-09 · T6 · Save & lifecycle notes.**
+  - `Api` additions: `getPathForFile(file)`, `confirmUnsaved(fileName)` → `'save'|'discard'|'cancel'`, `onSaveRequest(cb)` (main asks the renderer to save before closing). New channels `invoke.confirmUnsaved`, `send.saveResult`, `send.openFileReady`, `event.saveRequest`. `onOpenFile` signals `openFileReady` so paths queued before the renderer was ready are flushed.
+  - Cross-ownership edits: `viewer/openDocument.ts` (confirm discard before opening; drops use `getPathForFile`), `App.tsx`, `Toolbar.tsx` (`toolbar-end`), `styles.css` (`.notice-banner`, `.toast`), `smoke.spec.ts`.
+  - New files: `main/closeGuard.ts`, `main/atomicWrite.ts`, `renderer/src/save/{saveDocument,useSaveCommands,saveStore,SaveStatus,outputName}`.
+  - Test hooks (unpackaged only): `SIMPLE_PDF_E2E_SAVE=<path>`, `SIMPLE_PDF_E2E_UNSAVED=save|discard|cancel` (prompts counted in `globalThis.__simplePdfUnsavedPrompts`).
+  - **For T7:** the window title is `name — Edited`. Save failures show a `save-error` banner, not a native dialog. A dirty window vetoes `app.close()`; tests can force-quit with `app.evaluate(({ app }) => app.exit(0))`.
+  - **For T8:** `electron-builder.yml` has a `fileAssociations` entry (Editor role, no `LSHandlerRank`). Untested: Help menu, real Finder open-file, Windows/Linux `second-instance` and argv.
+- **2026-10-09 · Orchestrator · Phase 2 merge fixes.**
+  - `writePdf` only accepts paths returned by the save dialog (or its E2E hook) this session, and only bytes starting with `%PDF-`. There's an E2E test for the refusal.
+  - `launchApp` now defaults `SIMPLE_PDF_E2E_UNSAVED=discard`. Without it, tests that closed a dirty window popped up a real native "save changes?" dialog that hung each test for a minute (reported by the human). **Rule: E2E must never show a native dialog.** Specs that exercise a prompt pass their own answer.
 - **2026-10-09 · Orchestrator · Integration fix.** CanvasLayer now uses `AnnotationMode.ENABLE` for view-only docs or docs without fields (FormLayer renders nothing then, so the bitmap must paint the fields), and `ENABLE_FORMS` otherwise. `.claude/` (agent worktrees) is excluded from ESLint and git.
 - **2026-10-09 · Note.** `rotated.pdf`'s label "Upright text reads normally in the rotated view" is misleading: the content is drawn unrotated, so it appears sideways on /Rotate pages (which is the correct rendering). Fix the wording next time `make-fixtures.ts` is touched outside the signature section.
 - Deferred ideas: draw a signature with the trackpad (`signature_pad`), "insert today's date" button, checkmark stamp, page thumbnails sidebar, print, find-in-document, HEIC import.

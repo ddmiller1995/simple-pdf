@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SavedSignature } from '@shared/types';
 import { SignatureImportDialog } from './SignatureImportDialog';
 import './signature.css';
@@ -9,6 +9,11 @@ export type SignaturePanelProps = {
    * the visible page" and adds pointer-drag from the thumbnails.)
    */
   onPick?: (signature: SavedSignature) => void;
+  /**
+   * Called when a thumbnail was dragged (pointer-based, with a ghost that follows the cursor) and
+   * released at window coordinates (clientX, clientY).
+   */
+  onDrop?: (signature: SavedSignature, clientX: number, clientY: number) => void;
   /** Called after a new signature was added through the built-in import dialog. */
   onAdded?: (signature: SavedSignature) => void;
   className?: string;
@@ -59,10 +64,42 @@ export function useSignatures(): {
   return { signatures, loading, error, reload, remove, addLocal };
 }
 
-export function SignaturePanel({ onPick, onAdded, className }: SignaturePanelProps) {
+export function SignaturePanel({ onPick, onDrop, onAdded, className }: SignaturePanelProps) {
   const { signatures, loading, error, remove, addLocal } = useSignatures();
   const [importing, setImporting] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [ghost, setGhost] = useState<{ sig: SavedSignature; x: number; y: number } | null>(null);
+  const suppressClick = useRef(false);
+
+  // Pointer-based drag: below the threshold it stays a click (handled by onClick -> onPick).
+  const startDrag = (e: React.PointerEvent, sig: SavedSignature): void => {
+    if (e.button !== 0 || !onDrop) return;
+    const sx = e.clientX;
+    const sy = e.clientY;
+    let dragging = false;
+    const cleanup = (): void => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', cancel);
+      setGhost(null);
+    };
+    const move = (ev: PointerEvent): void => {
+      if (!dragging && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 5) return;
+      dragging = true;
+      setGhost({ sig, x: ev.clientX, y: ev.clientY });
+    };
+    const up = (ev: PointerEvent): void => {
+      cleanup();
+      if (!dragging) return;
+      suppressClick.current = true;
+      setTimeout(() => (suppressClick.current = false), 0);
+      onDrop(sig, ev.clientX, ev.clientY);
+    };
+    const cancel = (): void => cleanup();
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', cancel);
+  };
 
   const groups: { title: string; items: SavedSignature[] }[] = [
     { title: 'Signatures', items: signatures.filter((s) => s.kind === 'signature') },
@@ -94,7 +131,10 @@ export function SignaturePanel({ onPick, onAdded, className }: SignaturePanelPro
                       className="sig-thumb"
                       aria-label={`Use ${s.label}`}
                       title={s.label}
-                      onClick={() => onPick?.(s)}
+                      onPointerDown={(e) => startDrag(e, s)}
+                      onClick={() => {
+                        if (!suppressClick.current) onPick?.(s);
+                      }}
                     >
                       <img src={s.pngDataUrl} alt={s.label} draggable={false} />
                     </button>
@@ -135,6 +175,10 @@ export function SignaturePanel({ onPick, onAdded, className }: SignaturePanelPro
       <button type="button" className="sig-add" onClick={() => setImporting(true)}>
         Add signature…
       </button>
+
+      {ghost && (
+        <img className="sig-ghost" src={ghost.sig.pngDataUrl} alt="" style={{ left: ghost.x, top: ghost.y }} />
+      )}
 
       <SignatureImportDialog
         open={importing}

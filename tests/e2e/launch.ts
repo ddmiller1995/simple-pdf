@@ -21,6 +21,9 @@ export async function launchApp(
       ...process.env,
       ELECTRON_RENDERER_URL: '',
       SIMPLE_PDF_USER_DATA: mkdtempSync(join(tmpdir(), 'simple-pdf-e2e-')),
+      // Never show a blocking native "save changes?" dialog in tests; specs that exercise the
+      // prompt pass their own answer (save | discard | cancel).
+      SIMPLE_PDF_E2E_UNSAVED: 'discard',
       ...env,
     } as Record<string, string>,
   });
