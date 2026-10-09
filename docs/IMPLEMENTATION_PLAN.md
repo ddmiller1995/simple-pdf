@@ -311,10 +311,10 @@ T0 ──┬── T1 ──┬── T5 ──┬── T7
 |---|---|---|---|---|
 | T0 Scaffold & contracts | done | `task/T0-scaffold` | sonnet-5.5 / high | Scaffold, security, contracts, store, stubs, fixtures and smoke E2E done. All checks green. See §8 for deviations and gotchas. |
 | T0.1 Node 24 upgrade | done | `task/T0.1-node24` | sonnet-5.5 / medium | Node >=24 enforced; pdfjs-dist 6, vitest 5, eslint 10, TS 6, @types/node 24. All checks green. See §8. |
-| T1 Viewer | todo | | | |
+| T1 Viewer | done | `task/T1-viewer` | sonnet-5.5 / medium | Loader, viewer, Open, drag-drop, zoom, page indicator. 5 E2E tests. Orchestrator visually verified acroform + rotated rendering. |
 | T2 Coords/text/export | todo | | | |
 | T3 Signature extraction & library | todo | | | |
-| T4 AcroForms | todo | | | |
+| T4 AcroForms | review → partially done | `task/T4-forms` | sonnet-5.5 / medium | forms.ts + FormLayer merged; unit criteria met. E2E form fill + view-only banner deferred to T6/T7. |
 | T5 Overlay editing | todo | | | |
 | T6 Save & lifecycle | todo | | | |
 | T7 E2E & polish | todo | | | |
@@ -349,6 +349,22 @@ Statuses: `todo` → `in-progress` → `review` → `done` (or `blocked: <reason
   - Extras beyond the plan: `encrypted-userpw.pdf` (user password `secret`, PDF.js throws `PasswordException`), an option list (`interests`) in `acroform.pdf`, and `sig-truth.json` + `sig-truth-mask.png` (ground truth for T3's tests). Encrypted PDFs are not byte-deterministic across regenerations (random IVs); everything else is.
   - `tests/fixtures/real-signature.jpg` (2.7 MB) was dropped in by the human during T0. It is NOT committed by T0 and no test references it; the human decides whether to commit it.
   - `resources/fonts/NotoSans-Regular.ttf` is not added: T2 owns `resources/fonts/*`. `electron-builder.yml` is a minimal placeholder so `pnpm dist:mac` is a valid command; T8 owns the real config (`dist:mac` was not run in T0).
+- **2026-10-09 · T1 · Viewer notes.**
+  - pdfjs-dist 6 has no `isEvalSupported` or `enableScripting` `getDocument` options (no eval; scripting is simply never loaded). `PDFDocumentProxy.destroy` is gone; use `doc.loadingTask.destroy()`.
+  - PDF.js assets (cmaps, standard_fonts, wasm except quickjs, iccs) are copied to `out/renderer/pdfjs/` by a `pdfjsAssets` plugin in `electron.vite.config.ts` (cross-ownership edit).
+  - New transient `viewer/viewerStore.ts` (page indicator, fit request, open error). Helpers: `viewer/openDocument.ts` (`openPdfBytes`, `openWithDialog`, `openPath`), `viewer/useViewerCommands.ts` (open/zoom shortcuts).
+  - `store.zoom` is a scale (1 = 100%, clamped 0.5–4). Fit-width runs on load and on `requestFit()`. `Viewer` mounts `PageView` with a real viewport within ±1 page of the visible ones.
+  - Toolbar slots: `toolbar-tools` for T5, `toolbar-end` for T6's Save.
+  - E2E hook: `SIMPLE_PDF_E2E_OPEN=<path>` makes `openPdfDialog` return that file (ignored when packaged).
+  - **For T6:** dropped files only give a bare file name as `sourcePath`. Use Electron `webUtils.getPathForFile(file)` in the preload to get the real path (contract addition to `Api`), so Save As can default to the source directory.
+- **2026-10-09 · T4 · Forms notes.**
+  - `export.ts` must save with `pdfDoc.save({ updateFieldAppearances: false })` after `applyFormValues`, or a field left unflattened makes the save throw. (T2: check this is the case.)
+  - FormLayer reads field names from the widget annotation's `fieldName`. Typing coalesces to one undo step per field focus.
+  - Values with non-WinAnsi characters are not flattened (pdf-lib would turn them into `?`). The field stays filled and unflattened, and `NeedAppearances` is set. A follow-up could use the Noto Sans font from T2 for appearances.
+  - XFA and unparseable detection are tested with mocked PDF.js docs (there is no XFA fixture).
+  - **For T5:** FormLayer is `pointer-events: none` with `auto` on widgets. OverlayLayer must also pass pointer events through outside overlays (except with the Text tool active), or form inputs won't get clicks.
+- **2026-10-09 · Orchestrator · Integration fix.** CanvasLayer now uses `AnnotationMode.ENABLE` for view-only docs or docs without fields (FormLayer renders nothing then, so the bitmap must paint the fields), and `ENABLE_FORMS` otherwise. `.claude/` (agent worktrees) is excluded from ESLint and git.
+- **2026-10-09 · Note.** `rotated.pdf`'s label "Upright text reads normally in the rotated view" is misleading: the content is drawn unrotated, so it appears sideways on /Rotate pages (which is the correct rendering). Fix the wording next time `make-fixtures.ts` is touched outside the signature section.
 - Deferred ideas: draw a signature with the trackpad (`signature_pad`), "insert today's date" button, checkmark stamp, page thumbnails sidebar, print, find-in-document, HEIC import.
 
 ---

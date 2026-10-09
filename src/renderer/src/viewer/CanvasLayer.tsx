@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { AnnotationMode } from 'pdfjs-dist';
 import { getPdfPage } from '../pdf/loader';
+import { useDocumentStore } from '../state/documentStore';
 import type { LayerProps } from './layerProps';
 
 /** Cap on backing-store pixels per page so 400% zoom on a HiDPI display stays bounded. */
@@ -9,6 +10,10 @@ const MAX_CANVAS_PIXELS = 16_000_000;
 /** Renders the PDF.js page bitmap. Canvas px = CSS px * devicePixelRatio (capped). */
 export function CanvasLayer({ page, viewport }: LayerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // FormLayer only renders inputs for editable docs with fields; otherwise the bitmap paints them.
+  const formsInteractive = useDocumentStore(
+    (s) => !!s.doc?.capabilities.editable && !!s.doc.capabilities.hasAcroForm,
+  );
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,8 +40,7 @@ export function CanvasLayer({ page, viewport }: LayerProps) {
         task = pdfPage.render({
           canvas,
           viewport: renderViewport,
-          // Form widgets are drawn by FormLayer (HTML inputs), not baked into the bitmap.
-          annotationMode: AnnotationMode.ENABLE_FORMS,
+          annotationMode: formsInteractive ? AnnotationMode.ENABLE_FORMS : AnnotationMode.ENABLE,
         });
         await task.promise;
       } catch (e) {
@@ -49,7 +53,7 @@ export function CanvasLayer({ page, viewport }: LayerProps) {
       cancelled = true;
       task?.cancel();
     };
-  }, [page.index, viewport]);
+  }, [page.index, viewport, formsInteractive]);
 
   // Release the backing store when the layer goes away (page scrolled far off-screen).
   useEffect(() => {
