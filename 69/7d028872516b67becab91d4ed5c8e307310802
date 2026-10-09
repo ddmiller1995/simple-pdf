@@ -1,0 +1,71 @@
+src/renderer/src/overlays/TextEditor.tsx
+  s_e8b8bce4678e6f::t_efa4761408102a 1-66
+src/renderer/src/testHook.ts
+  s_e8b8bce4678e6f::t_7d5f8a60bec475 1-39
+src/renderer/src/overlays/overlays.css
+  s_e8b8bce4678e6f::t_03ad289c4bb82d 145-149
+  s_e8b8bce4678e6f::t_9bdfa297b299b6 1-144
+src/renderer/src/state/documentStore.ts
+  s_e8b8bce4678e6f::t_819c81d3b695bf 2-15,51
+tests/unit/overlays.test.ts
+  s_e8b8bce4678e6f::t_73ed2e3aea8ea1 1-178
+src/renderer/src/overlays/TextBox.tsx
+  s_e8b8bce4678e6f::t_f1b2c93d37aca1 1,3-4,6-50
+src/renderer/src/overlays/ImageBox.tsx
+  s_e8b8bce4678e6f::t_1d1af541645b4f 3,5
+src/renderer/src/toolbar/Toolbar.tsx
+  s_e8b8bce4678e6f::t_b6e93fde398d1a 1-4,16-124,139
+src/renderer/src/overlays/SelectionHandles.tsx
+  s_e8b8bce4678e6f::t_d05f7714520a8b 1,3-22
+tests/e2e/overlays.spec.ts
+  s_e8b8bce4678e6f::t_b02958862ea6c6 73,77
+  s_e8b8bce4678e6f::t_2de9a2819a9278 1-7,10-44,46-66,72,74-76,78-82,85-223,225-226
+  s_e8b8bce4678e6f::t_953c2a82ea3501 8-9
+  s_e8b8bce4678e6f::t_d6ae060cd4daa6 45,67-71
+  s_e8b8bce4678e6f::t_50f0ded672f7a2 224
+  s_e8b8bce4678e6f::t_f28aeb66ab6304 83-84
+src/renderer/src/viewer/OverlayLayer.tsx
+  s_e8b8bce4678e6f::t_18d89bb7ff89e2 1-10,12-21,24-47,49-57,59-136,138-188
+  s_e8b8bce4678e6f::t_c50941dbca0d31 11,48,58,137
+src/renderer/src/signature/SignaturePanel.tsx
+  s_e8b8bce4678e6f::t_fac58a01733da4 1,12-16,67,71-102,134-137,179-181
+  s_e8b8bce4678e6f::t_ee4ebca327d36b 182
+src/renderer/src/main.tsx
+  s_e8b8bce4678e6f::t_bd3ee9f13df3bc 4,16,22,28,30-33
+  s_e8b8bce4678e6f::t_ddbc75a6609ff1 5-6,9-15,17-21,29
+src/renderer/src/overlays/textReady.ts
+  s_e8b8bce4678e6f::t_619d752ec2ffc3 1-25
+src/renderer/src/edit/useEditCommands.ts
+  s_e8b8bce4678e6f::t_b618412f8f388b 1-107
+src/renderer/src/overlays/geometry.ts
+  s_e8b8bce4678e6f::t_8f05218c0ddd8e 1-99
+src/renderer/src/edit/editActions.ts
+  s_e8b8bce4678e6f::t_e8ad1cff73dd1c 1-61
+src/renderer/src/overlays/placement.ts
+  s_e8b8bce4678e6f::t_fb928a71397908 1-95
+src/renderer/src/overlays/editStore.ts
+  s_e8b8bce4678e6f::t_36903310f332e0 1-73
+src/renderer/src/App.tsx
+  s_e8b8bce4678e6f::t_c3a5f9e02d610d 6,17
+src/renderer/src/overlays/textFit.ts
+  s_e8b8bce4678e6f::t_8f05218c0ddd8e 1-30
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "697d028872516b67becab91d4ed5c8e307310802",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
