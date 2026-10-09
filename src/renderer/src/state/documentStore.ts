@@ -1,5 +1,18 @@
 import { create } from 'zustand';
-import type { DocCapabilities, FormValue, FormValues, Overlay, PageInfo } from '@shared/types';
+import type {
+  DocCapabilities,
+  FormValue,
+  FormValues,
+  ImageOverlay,
+  Overlay,
+  PageInfo,
+  TextOverlay,
+} from '@shared/types';
+
+/** Fields of an overlay that `updateOverlay` may change (never `id` / `kind`). */
+export type OverlayPatch =
+  | Partial<Omit<TextOverlay, 'id' | 'kind'>>
+  | Partial<Omit<ImageOverlay, 'id' | 'kind'>>;
 
 export type Tool = 'select' | 'text';
 
@@ -35,7 +48,7 @@ export type DocumentStore = {
 
   loadDocument(doc: DocState): void;
   addOverlay(overlay: Overlay): void;
-  updateOverlay(id: string, patch: Partial<Omit<Overlay, 'id' | 'kind'>>): void;
+  updateOverlay(id: string, patch: OverlayPatch): void;
   removeOverlay(id: string): void;
   setFormValue(name: string, value: FormValue): void;
   setTool(tool: Tool): void;

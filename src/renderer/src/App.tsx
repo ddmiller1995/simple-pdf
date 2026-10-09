@@ -3,6 +3,7 @@ import { Toolbar } from './toolbar/Toolbar';
 import { Viewer } from './viewer/Viewer';
 import { useDocumentStore } from './state/documentStore';
 import { openDroppedFile } from './viewer/openDocument';
+import { useEditCommands } from './edit/useEditCommands';
 import { useViewerCommands } from './viewer/useViewerCommands';
 import { useViewerStore } from './viewer/viewerStore';
 
@@ -13,6 +14,7 @@ export function App() {
   const openError = useViewerStore((s) => s.openError);
   const [dragging, setDragging] = useState(false);
   useViewerCommands();
+  useEditCommands();
 
   // Drop a PDF anywhere on the window to open it. The renderer has no file paths under the
   // sandbox, so the File's bytes are read here.
