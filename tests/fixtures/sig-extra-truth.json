@@ -1,0 +1,50 @@
+{
+  "sig-cursive.png": {
+    "width": 1200,
+    "height": 600,
+    "bbox": {
+      "x": 151,
+      "y": 206,
+      "width": 779,
+      "height": 258
+    },
+    "mask": "sig-cursive-mask.png",
+    "note": "Cursive strokes, pen radius 1.4-5.4 px (thick downstrokes, hairline upstrokes), plus a small i-dot."
+  },
+  "sig-phone.jpg": {
+    "width": 1200,
+    "height": 600,
+    "bbox": {
+      "x": 181,
+      "y": 204,
+      "width": 712,
+      "height": 245
+    },
+    "mask": "sig-phone-mask.png",
+    "note": "Cursive strokes rotated 4.5 degrees and scaled 0.92, soft diagonal shadow, vignette, noise, JPEG q82."
+  },
+  "sig-jpeg-heavy.jpg": {
+    "width": 1200,
+    "height": 600,
+    "bbox": {
+      "x": 151,
+      "y": 206,
+      "width": 779,
+      "height": 258
+    },
+    "mask": "sig-jpeg-heavy-mask.png",
+    "note": "Same strokes as sig-cursive.png, JPEG quality 8 (heavy blocking/ringing)."
+  },
+  "sig-initials.png": {
+    "width": 1000,
+    "height": 760,
+    "bbox": {
+      "x": 253,
+      "y": 177,
+      "width": 494,
+      "height": 406
+    },
+    "mask": "sig-initials-mask.png",
+    "note": "Blue \"DM\" initials, broad pen radius 3.6-7.4 px, bottom-heavy lighting gradient."
+  }
+}

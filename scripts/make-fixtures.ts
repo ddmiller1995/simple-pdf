@@ -8,6 +8,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { PDFDocument, PDFPage, StandardFonts, degrees, rgb, type PDFFont } from '@cantoo/pdf-lib';
 import { PNG } from 'pngjs';
+import { ImageData, createCanvas } from '@napi-rs/canvas';
 
 const OUT = join(__dirname, '..', 'tests', 'fixtures');
 mkdirSync(OUT, { recursive: true });
@@ -409,6 +410,335 @@ function signatures(): void {
   }
 }
 
+// ---------------------------------------------------------------------------------------------
+// Extra synthetic signature photos (T3): cursive variable-width pen, a rotated + shadowed phone
+// photo, a heavily compressed JPEG and initials. Each has its own ground truth:
+// sig-extra-truth.json (bbox of ink with coverage > 0.5) and <name>-mask.png (white = certain ink).
+// ---------------------------------------------------------------------------------------------
+
+type Pt = [number, number];
+/** A pen path; `radius(s, total, tx, ty)` gives the pen radius at arc length s (tx, ty = unit tangent). */
+type Pen = { pts: Pt[]; radius: (s: number, total: number, tx: number, ty: number) => number };
+type StampedPoint = { x: number; y: number; r: number };
+
+/** Resample a polyline at ~0.4px spacing and attach the pen radius to every sample. */
+function stampPen(pen: Pen, xf: (p: Pt) => Pt): StampedPoint[] {
+  const pts = pen.pts.map(xf);
+  const seg: number[] = [0];
+  for (let i = 1; i < pts.length; i++) {
+    seg.push(seg[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  }
+  const total = seg[seg.length - 1];
+  const out: StampedPoint[] = [];
+  let j = 1;
+  for (let s = 0; s <= total; s += 0.4) {
+    while (j < pts.length - 1 && seg[j] < s) j++;
+    const d = seg[j] - seg[j - 1] || 1;
+    const f = (s - seg[j - 1]) / d;
+    const x = pts[j - 1][0] + (pts[j][0] - pts[j - 1][0]) * f;
+    const y = pts[j - 1][1] + (pts[j][1] - pts[j - 1][1]) * f;
+    const tx = (pts[j][0] - pts[j - 1][0]) / d;
+    const ty = (pts[j][1] - pts[j - 1][1]) / d;
+    out.push({ x, y, r: pen.radius(s, total, tx, ty) });
+  }
+  return out;
+}
+
+function rasterizeStamps(stamps: StampedPoint[], w: number, h: number): Float32Array {
+  const cov = new Float32Array(w * h);
+  for (const { x: px, y: py, r } of stamps) {
+    const x0 = Math.max(0, Math.floor(px - r - 1));
+    const x1 = Math.min(w - 1, Math.ceil(px + r + 1));
+    const y0 = Math.max(0, Math.floor(py - r - 1));
+    const y1 = Math.min(h - 1, Math.ceil(py + r + 1));
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const a = Math.min(1, Math.max(0, r + 0.5 - Math.hypot(x + 0.5 - px, y + 0.5 - py)));
+        if (a > cov[y * w + x]) cov[y * w + x] = a;
+      }
+    }
+  }
+  return cov;
+}
+
+/** Calligraphic pen: downstrokes are thick, upstrokes hairline, with tapered ends. */
+function calligraphic(rMin: number, rMax: number): Pen['radius'] {
+  return (s, total, _tx, ty) => {
+    const press = Math.max(0, ty); // image y grows downward: ty > 0 is a downstroke
+    const taper = Math.min(1, 0.35 + s / 25, 0.35 + (total - s) / 25);
+    return (rMin + (rMax - rMin) * press * press) * taper;
+  };
+}
+
+function curve(n: number, f: (t: number) => Pt): Pt[] {
+  const pts: Pt[] = [];
+  for (let i = 0; i <= n; i++) pts.push(f(i / n));
+  return pts;
+}
+
+/** A cursive-looking name: big capital loop, a run of connected loops, a flourish and an i-dot. */
+function cursivePens(): Pen[] {
+  const pen = calligraphic(1.7, 5.4);
+  // Big capital: an S-like double loop.
+  const capital = curve(500, (t): Pt => {
+    const a = 2 * Math.PI * 1.35 * t;
+    return [
+      200 + 70 * Math.sin(a) * (1 - 0.3 * t) + 40 * t,
+      330 - 150 * Math.cos(a * 0.9) * (0.6 + 0.4 * t) + 40 * t,
+    ];
+  });
+  // Connected loops left to right (trochoid), amplitude modulated.
+  const word = curve(1400, (t): Pt => {
+    const a = 2 * Math.PI * 7.5 * t;
+    return [
+      280 + 640 * t + 34 * Math.cos(a) * (0.8 + 0.5 * Math.sin(Math.PI * t)),
+      330 - 62 * Math.sin(a) * (0.7 + 0.6 * Math.sin(Math.PI * t)) - 18 * t,
+    ];
+  });
+  // Trailing flourish underneath, from the end of the word back to the left.
+  const flourish = curve(600, (t): Pt => [
+    930 - 760 * t + 20 * Math.sin(5 * t),
+    430 + 36 * Math.sin(Math.PI * t) - 30 * t,
+  ]);
+  const dot = curve(24, (t): Pt => [
+    640 + 6 * Math.cos(2 * Math.PI * t),
+    215 + 6 * Math.sin(2 * Math.PI * t),
+  ]);
+  return [
+    { pts: capital, radius: pen },
+    { pts: word, radius: pen },
+    { pts: flourish, radius: calligraphic(1.4, 3.6) },
+    { pts: dot, radius: () => 3.2 },
+  ];
+}
+
+/** "DM" initials in a broad pen. */
+function initialsPens(): Pen[] {
+  const pen = calligraphic(3.6, 7.4);
+  const dStem = curve(80, (t): Pt => [260, 180 + 400 * t]);
+  const dBowl = curve(240, (t): Pt => {
+    const a = -Math.PI / 2 + Math.PI * t;
+    return [260 + 200 * Math.cos(a), 380 + 200 * Math.sin(a)];
+  });
+  const mLeft = curve(60, (t): Pt => [560, 580 - 400 * t]);
+  const mVee1 = curve(60, (t): Pt => [560 + 90 * t, 180 + 280 * t]);
+  const mVee2 = curve(60, (t): Pt => [650 + 90 * t, 460 - 280 * t]);
+  const mRight = curve(60, (t): Pt => [740, 180 + 400 * t]);
+  return [dStem, dBowl, mLeft, mVee1, mVee2, mRight].map((pts) => ({ pts, radius: pen }));
+}
+
+type Look = {
+  w: number;
+  h: number;
+  paper: [number, number, number];
+  ink: [number, number, number];
+  noiseSigma: number;
+  seed: number;
+  /** multiplicative lighting map, 1 = neutral */
+  light: (x: number, y: number) => number;
+};
+
+function smoothstep(a: number, b: number, v: number): number {
+  const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
+  return t * t * (3 - 2 * t);
+}
+
+function renderLook(cov: Float32Array, o: Look): Uint8ClampedArray {
+  const rnd = mulberry32(o.seed);
+  const gauss = (): number => Math.sqrt(-2 * Math.log(1 - rnd())) * Math.cos(2 * Math.PI * rnd());
+  const data = new Uint8ClampedArray(o.w * o.h * 4);
+  for (let y = 0; y < o.h; y++) {
+    for (let x = 0; x < o.w; x++) {
+      const i = y * o.w + x;
+      const a = cov[i];
+      const illum = o.light(x, y);
+      const n = o.noiseSigma ? gauss() * o.noiseSigma : 0;
+      for (let k = 0; k < 3; k++) {
+        data[i * 4 + k] = Math.round((o.paper[k] * (1 - a) + o.ink[k] * a) * illum + n);
+      }
+      data[i * 4 + 3] = 255;
+    }
+  }
+  return data;
+}
+
+function pngBytes(data: Uint8ClampedArray, w: number, h: number): Buffer {
+  const png = new PNG({ width: w, height: h });
+  png.data = Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+  return PNG.sync.write(png);
+}
+
+function jpegBytes(data: Uint8ClampedArray, w: number, h: number, quality: number): Buffer {
+  const canvas = createCanvas(w, h);
+  canvas.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(data), w, h), 0, 0);
+  return canvas.encodeSync('jpeg', quality);
+}
+
+type ExtraTruth = {
+  width: number;
+  height: number;
+  bbox: { x: number; y: number; width: number; height: number };
+  mask: string;
+  note: string;
+};
+
+function extraSignatures(): void {
+  const truths: Record<string, ExtraTruth> = {};
+  const identity = (p: Pt): Pt => p;
+
+  const emit = (
+    name: string,
+    cov: Float32Array,
+    look: Look,
+    format: { kind: 'png' } | { kind: 'jpeg'; quality: number },
+    note: string,
+  ): void => {
+    const { w, h } = look;
+    let minX = w,
+      minY = h,
+      maxX = -1,
+      maxY = -1;
+    const mask = new PNG({ width: w, height: h });
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const a = cov[y * w + x];
+        if (a > 0.5) {
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+          minY = Math.min(minY, y);
+          maxY = Math.max(maxY, y);
+        }
+        const v = a >= 0.99 ? 255 : 0;
+        const j = (y * w + x) * 4;
+        mask.data[j] = mask.data[j + 1] = mask.data[j + 2] = v;
+        mask.data[j + 3] = 255;
+      }
+    }
+    const base = name.replace(/\.[a-z]+$/, '');
+    const maskName = `${base}-mask.png`;
+    writeFileSync(join(OUT, maskName), PNG.sync.write(mask));
+    truths[name] = {
+      width: w,
+      height: h,
+      bbox: { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 },
+      mask: maskName,
+      note,
+    };
+    const pixels = renderLook(cov, look);
+    const bytes =
+      format.kind === 'png' ? pngBytes(pixels, w, h) : jpegBytes(pixels, w, h, format.quality);
+    writeFileSync(join(OUT, name), bytes);
+    console.log(`wrote ${name} (${(bytes.length / 1024).toFixed(1)} KB)`);
+  };
+
+  // 1. Cursive, variable pen width, mild lighting.
+  const W1 = 1200,
+    H1 = 600;
+  const cursive = cursivePens();
+  const covCursive = rasterizeStamps(
+    cursive.flatMap((p) => stampPen(p, identity)),
+    W1,
+    H1,
+  );
+  emit(
+    'sig-cursive.png',
+    covCursive,
+    {
+      w: W1,
+      h: H1,
+      paper: [241, 237, 228],
+      ink: [28, 28, 38],
+      noiseSigma: 1.2,
+      seed: 11,
+      light: (x, y) => 1.02 - 0.15 * ((x / W1) * 0.5 + (y / H1) * 0.5),
+    },
+    { kind: 'png' },
+    'Cursive strokes, pen radius 1.4-5.4 px (thick downstrokes, hairline upstrokes), plus a small i-dot.',
+  );
+
+  // 2. Slightly rotated, shadowed phone photo (JPEG q82).
+  const theta = (4.5 * Math.PI) / 180;
+  const cx = W1 / 2,
+    cy = H1 / 2;
+  const rot = (p: Pt): Pt => {
+    const dx = (p[0] - cx) * 0.92,
+      dy = (p[1] - cy) * 0.92;
+    return [
+      cx + dx * Math.cos(theta) - dy * Math.sin(theta),
+      cy + dx * Math.sin(theta) + dy * Math.cos(theta),
+    ];
+  };
+  const covPhone = rasterizeStamps(
+    cursive.flatMap((p) => stampPen(p, rot)),
+    W1,
+    H1,
+  );
+  emit(
+    'sig-phone.jpg',
+    covPhone,
+    {
+      w: W1,
+      h: H1,
+      paper: [233, 228, 212],
+      ink: [22, 26, 48],
+      noiseSigma: 3,
+      seed: 12,
+      light: (x, y) => {
+        // Soft diagonal shadow (160px penumbra, 32% darker) plus a vignette.
+        const d = x * 0.6 + y * 0.8 - 560; // signed distance to a diagonal line
+        const shadow = 1 - 0.32 * smoothstep(-80, 80, d);
+        const rr = Math.hypot((x - cx) / cx, (y - cy) / cy);
+        return shadow * (1.04 - 0.14 * rr * rr);
+      },
+    },
+    { kind: 'jpeg', quality: 82 },
+    'Cursive strokes rotated 4.5 degrees and scaled 0.92, soft diagonal shadow, vignette, noise, JPEG q82.',
+  );
+
+  // 3. Heavy JPEG (q8): blocking and ringing around the strokes.
+  emit(
+    'sig-jpeg-heavy.jpg',
+    covCursive,
+    {
+      w: W1,
+      h: H1,
+      paper: [247, 246, 243],
+      ink: [30, 30, 36],
+      noiseSigma: 2,
+      seed: 13,
+      light: (x, y) => 1.0 - 0.1 * (x / W1) - 0.05 * (y / H1),
+    },
+    { kind: 'jpeg', quality: 8 },
+    'Same strokes as sig-cursive.png, JPEG quality 8 (heavy blocking/ringing).',
+  );
+
+  // 4. Initials "DM" in a broad pen.
+  const W4 = 1000,
+    H4 = 760;
+  const covInitials = rasterizeStamps(
+    initialsPens().flatMap((p) => stampPen(p, identity)),
+    W4,
+    H4,
+  );
+  emit(
+    'sig-initials.png',
+    covInitials,
+    {
+      w: W4,
+      h: H4,
+      paper: [250, 249, 246],
+      ink: [20, 30, 90],
+      noiseSigma: 1.5,
+      seed: 14,
+      light: (x, y) => 1.03 - 0.22 * ((x / W4) * 0.3 + (y / H4) * 0.7),
+    },
+    { kind: 'png' },
+    'Blue "DM" initials, broad pen radius 3.6-7.4 px, bottom-heavy lighting gradient.',
+  );
+
+  writeFileSync(join(OUT, 'sig-extra-truth.json'), JSON.stringify(truths, null, 2) + '\n');
+}
+
 async function main(): Promise<void> {
   await simple3Page();
   await mixedSizes();
@@ -418,6 +748,7 @@ async function main(): Promise<void> {
   const encOk = await encrypted();
   await large50();
   signatures();
+  extraSignatures();
   if (!encOk) process.exitCode = 1;
 }
 
