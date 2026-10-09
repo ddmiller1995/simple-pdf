@@ -10,3 +10,4 @@ playwright-report
 
 # Personal signature photo for manual testing only (never commit)
 tests/fixtures/real-signature.*
+.claude/
