@@ -1,0 +1,24 @@
+docs/IMPLEMENTATION_PLAN.md
+  s_e8b8bce4678e6f::t_86b7cce374c104 160-163
+src/renderer/src/pdf/loader.ts
+  s_e8b8bce4678e6f::t_b188a65d35e833 1,4-5,9-18
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fba6b18a235e80e8ece48ef9c0ab4ab2711ec4bc",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
