@@ -42,9 +42,28 @@ export function registerFileIpc(): void {
   ipcMain.on(send.setDirty, () => {});
 }
 
+// T3: imports for the signature handlers live next to them (ES imports hoist) so that edits to
+// registerFileIpc's imports above do not collide with this block.
+import { app } from 'electron';
+import { join } from 'node:path';
+import { createSignatureStore, type SignatureStore } from './signatureStore';
+
+let signatureStore: SignatureStore | undefined;
+
+/** Lazily created so `app.getPath('userData')` is only read after the app is ready. */
+function getSignatureStore(): SignatureStore {
+  signatureStore ??= createSignatureStore(join(app.getPath('userData'), 'signatures'));
+  return signatureStore;
+}
+
 export function registerSignatureIpc(): void {
   const { invoke } = IPC_CHANNELS;
-  ipcMain.handle(invoke.listSignatures, notImplemented('listSignatures'));
-  ipcMain.handle(invoke.addSignature, notImplemented('addSignature'));
-  ipcMain.handle(invoke.deleteSignature, notImplemented('deleteSignature'));
+  // The store validates every payload (PNG data URL, <= 5 MB, kind, label, uuid ids).
+  ipcMain.handle(invoke.listSignatures, () => getSignatureStore().list());
+  ipcMain.handle(invoke.addSignature, (_e, sig: unknown) =>
+    getSignatureStore().add(sig as Parameters<SignatureStore['add']>[0]),
+  );
+  ipcMain.handle(invoke.deleteSignature, (_e, id: unknown) =>
+    getSignatureStore().delete(id as string),
+  );
 }
