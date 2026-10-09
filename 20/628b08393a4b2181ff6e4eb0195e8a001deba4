@@ -1,0 +1,69 @@
+src/renderer/src/viewer/layerProps.ts
+  s_e8b8bce4678e6f::t_47845d284fab12 1-5
+src/renderer/src/overlays/ImageBox.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 1-6
+src/renderer/src/viewer/PageView.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 1-19
+src/renderer/src/toolbar/Toolbar.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 1-8
+src/renderer/src/viewer/OverlayLayer.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 1-6
+src/renderer/src/main.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 1-10
+src/renderer/src/App.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 1-13
+src/renderer/src/pdf/textLayout.ts
+  s_e8b8bce4678e6f::t_47845d284fab12 1-8
+src/renderer/src/state/documentStore.ts
+  s_e8b8bce4678e6f::t_dffead323110e6 1-170
+src/renderer/src/viewer/FormLayer.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 1-6
+src/renderer/src/pdf/export.ts
+  s_e8b8bce4678e6f::t_47845d284fab12 1-14
+src/renderer/src/overlays/SelectionHandles.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 1-6
+tests/unit/documentStore.test.ts
+  s_e8b8bce4678e6f::t_dffead323110e6 1-127
+src/renderer/src/viewer/CanvasLayer.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 1-6
+src/renderer/src/overlays/TextBox.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 1-6
+src/renderer/src/pdf/forms.ts
+  s_e8b8bce4678e6f::t_47845d284fab12 1-16
+src/renderer/src/signature/extract.ts
+  s_e8b8bce4678e6f::t_47845d284fab12 1-27
+src/renderer/src/pdf/loader.ts
+  s_e8b8bce4678e6f::t_47845d284fab12 1-7
+src/renderer/src/signature/SignatureImportDialog.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 1-4
+src/renderer/src/pdf/coords.ts
+  s_e8b8bce4678e6f::t_47845d284fab12 1-15
+src/renderer/index.html
+  s_e8b8bce4678e6f::t_47845d284fab12 1-16
+src/renderer/src/signature/SignaturePanel.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 1-4
+src/renderer/src/viewer/Viewer.tsx
+  s_e8b8bce4678e6f::t_47845d284fab12 3-5,18-24,26-29
+  s_e8b8bce4678e6f::t_dc188260e0a475 1-2,6-17,25
+src/renderer/src/styles.css
+  s_e8b8bce4678e6f::t_47845d284fab12 1-59
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "20628b08393a4b2181ff6e4eb0195e8a001deba4",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
