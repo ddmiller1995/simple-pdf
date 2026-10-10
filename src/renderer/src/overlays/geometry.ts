@@ -5,6 +5,8 @@ import type { ScreenRect } from '../pdf/coords';
 // rotation handling is needed here; callers convert to/from PDF user space with pdf/coords.ts.
 
 export type Corner = 'nw' | 'ne' | 'sw' | 'se';
+/** Middle handle on the left / right edge of a text box. */
+export type Edge = 'w' | 'e';
 export type Bounds = { left: number; top: number; right: number; bottom: number };
 
 export const pageBounds = (width: number, height: number): Bounds => ({
@@ -41,7 +43,7 @@ export function centeredRect(
   return clampInto({ left: cx - width / 2, top: cy - height / 2, width, height }, b);
 }
 
-const isEast = (c: Corner): boolean => c === 'ne' || c === 'se';
+const isEast = (c: Corner | Edge): boolean => c === 'ne' || c === 'se' || c === 'e';
 const isSouth = (c: Corner): boolean => c === 'sw' || c === 'se';
 
 /**
@@ -78,13 +80,13 @@ export function resizeAspect(
 }
 
 /**
- * Drag a corner of a text box: only the width changes (text re-wraps). Right corners move the
+ * Drag a side handle (or corner) of a text box: only the width changes (text re-wraps). Right corners move the
  * right edge, left corners the left edge; the opposite edge is fixed. Height and top are left to
  * the caller (the height depends on the wrapped text).
  */
 export function resizeWidth(
   start: ScreenRect,
-  corner: Corner,
+  corner: Corner | Edge,
   dx: number,
   b: Bounds,
   minWidth: number,
@@ -96,4 +98,42 @@ export function resizeWidth(
   const right = start.left + start.width;
   const width = clamp(start.width - dx, minWidth, right - b.left);
   return { left: right - width, width };
+}
+
+/** Font size limits (points) for scaling a text box by its corners. */
+export const MIN_SCALE_FONT = 6;
+export const MAX_SCALE_FONT = 96;
+
+/**
+ * Scale `start` by `factor` keeping the corner opposite `corner` fixed (the text-scaling drag:
+ * font size and box grow together).
+ */
+export function scaleRectFrom(start: ScreenRect, corner: Corner, factor: number): ScreenRect {
+  const width = start.width * factor;
+  const height = start.height * factor;
+  return {
+    left: isEast(corner) ? start.left : start.left + start.width - width,
+    top: isSouth(corner) ? start.top : start.top + start.height - height,
+    width,
+    height,
+  };
+}
+
+/**
+ * Corner drag on a text box: the scale factor follows the pointer (as `resizeAspect` does), the
+ * box stays on the page, and `fontSize * factor` stays within 6..96pt.
+ */
+export function scaleTextDrag(
+  start: ScreenRect,
+  fontSize: number,
+  corner: Corner,
+  dx: number,
+  dy: number,
+  b: Bounds,
+): { factor: number; fontSize: number; rect: ScreenRect } {
+  const minFactor = MIN_SCALE_FONT / fontSize;
+  const maxFactor = MAX_SCALE_FONT / fontSize;
+  const probe = resizeAspect(start, corner, dx, dy, b, start.width * minFactor);
+  const factor = clamp(probe.width / start.width, minFactor, maxFactor);
+  return { factor, fontSize: fontSize * factor, rect: scaleRectFrom(start, corner, factor) };
 }

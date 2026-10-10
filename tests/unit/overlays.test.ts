@@ -7,6 +7,8 @@ import {
   pageBounds,
   resizeAspect,
   resizeWidth,
+  scaleRectFrom,
+  scaleTextDrag,
 } from '@renderer/overlays/geometry';
 import { autoFit, sizeAtWidth } from '@renderer/overlays/textFit';
 import { useEditStore } from '@renderer/overlays/editStore';
@@ -15,6 +17,42 @@ import { lineHeight } from '@renderer/pdf/textLayout';
 import { useNotoSans } from '../helpers/font';
 
 const B = pageBounds(600, 800);
+
+describe('text scaling', () => {
+  const start = { left: 200, top: 300, width: 100, height: 40 };
+
+  it('scaleRectFrom keeps the opposite corner fixed', () => {
+    expect(scaleRectFrom(start, 'se', 2)).toEqual({ left: 200, top: 300, width: 200, height: 80 });
+    expect(scaleRectFrom(start, 'nw', 2)).toEqual({ left: 100, top: 260, width: 200, height: 80 });
+    expect(scaleRectFrom(start, 'ne', 0.5)).toEqual({ left: 200, top: 320, width: 50, height: 20 });
+    expect(scaleRectFrom(start, 'sw', 0.5)).toEqual({ left: 250, top: 300, width: 50, height: 20 });
+  });
+
+  it('a diagonal corner drag scales font and box together', () => {
+    const r = scaleTextDrag(start, 12, 'se', 100, 40, B);
+    expect(r.factor).toBeCloseTo(2);
+    expect(r.fontSize).toBeCloseTo(24);
+    expect(r.rect).toEqual({ left: 200, top: 300, width: 200, height: 80 });
+    const shrink = scaleTextDrag(start, 12, 'nw', 50, 20, B);
+    expect(shrink.factor).toBeCloseTo(0.5);
+    // Opposite (south-east) corner stays at (300, 340).
+    expect(shrink.rect.left + shrink.rect.width).toBeCloseTo(300);
+    expect(shrink.rect.top + shrink.rect.height).toBeCloseTo(340);
+  });
+
+  it('clamps the font size to 6..96pt', () => {
+    expect(scaleTextDrag(start, 12, 'se', -1000, -1000, B).fontSize).toBeCloseTo(6);
+    const big = scaleTextDrag({ left: 0, top: 0, width: 20, height: 10 }, 12, 'se', 5000, 5000, B);
+    expect(big.fontSize).toBeLessThanOrEqual(96);
+    const huge = scaleTextDrag({ left: 0, top: 0, width: 20, height: 10 }, 40, 'se', 500, 500, B);
+    expect(huge.fontSize).toBeCloseTo(96);
+  });
+
+  it('resizeWidth also accepts the edge handles', () => {
+    expect(resizeWidth(start, 'e', 30, B, 20)).toEqual({ left: 200, width: 130 });
+    expect(resizeWidth(start, 'w', 30, B, 20)).toEqual({ left: 230, width: 70 });
+  });
+});
 
 describe('geometry', () => {
   it('moveRect clamps to the page on every side', () => {
@@ -174,5 +212,28 @@ describe('edit session and undo history', () => {
     expect(docs.getState().overlays[0]!.rect.x).toBe(50);
     docs.getState().undo();
     expect(docs.getState().overlays[0]!.rect.x).toBe(10);
+  });
+});
+
+describe('stamp mode', () => {
+  const sig = {
+    id: 's1',
+    label: 'Sig',
+    kind: 'signature' as const,
+    createdAt: '',
+    pngDataUrl: 'data:image/png;base64,AA==',
+  };
+
+  it('arming selects the Select tool; switching tool disarms', async () => {
+    const { useStampStore } = await import('@renderer/overlays/stampStore');
+    useDocumentStore.getState().setTool('text');
+    useStampStore.getState().arm(sig);
+    expect(useDocumentStore.getState().tool).toBe('select');
+    expect(useStampStore.getState().armed).toEqual(sig);
+    useDocumentStore.getState().setTool('text');
+    expect(useStampStore.getState().armed).toBeNull();
+    useStampStore.getState().arm(sig);
+    useStampStore.getState().disarm();
+    expect(useStampStore.getState().armed).toBeNull();
   });
 });
