@@ -321,7 +321,7 @@ T0 ──┬── T1 ──┬── T5 ──┬── T7
 | T4 AcroForms | done | `task/T4-forms` | sonnet-5.5 / medium | forms.ts + FormLayer merged; unit criteria met. E2E form fill + view-only banner covered by T6's save.spec. |
 | T5 Overlay editing | done | `task/T5-overlays` | sonnet-5.5 / medium | Text tool, signature drag/click placement, select/move/resize, font size, undo/redo, shortcuts. 14 unit + 2 E2E tests (export round-trip ±1pt on a 90° page). |
 | T6 Save & lifecycle | done | `task/T6-save` | sonnet-5.5 / medium | Save/Save As (atomic), unsaved prompt on close/quit/open-another, menus, open-file, view-only banner. Covers T4's deferred E2E. Orchestrator restricted writePdf to dialog-approved paths. |
-| T7 E2E & polish | in-progress | `task/T7-polish` | sonnet-5.5 / medium | Includes the user-feedback items (text scaling handles, signature stamp mode). |
+| T7 E2E & polish | done | `task/T7-polish` | sonnet-5.5 / medium | Text scaling handles, signature stamp mode, full-flow E2E, light/dark mode, accessibility, `docs/MANUAL_QA.md`. §9 checklist not yet run by a human. Final `dist:mac` + `verify:packaged` pass after merge. |
 | T8 Packaging | done | `task/T8-packaging` | sonnet-5.5 / medium | arm64 dmg + zip, unsigned. `.app` 297 MB, `.dmg` 128 MB. `pnpm verify:packaged` passes (renders argv + open-file PDFs, only `file:` requests). |
 
 Statuses: `todo` → `in-progress` → `review` → `done` (or `blocked: <reason>`). In the Agent/Owner column, record the model and effort used (e.g. `sonnet-5.5 / medium`).
@@ -398,6 +398,13 @@ Statuses: `todo` → `in-progress` → `review` → `done` (or `blocked: <reason
   - Test hooks (unpackaged only): `SIMPLE_PDF_E2E_SAVE=<path>`, `SIMPLE_PDF_E2E_UNSAVED=save|discard|cancel` (prompts counted in `globalThis.__simplePdfUnsavedPrompts`).
   - **For T7:** the window title is `name — Edited`. Save failures show a `save-error` banner, not a native dialog. A dirty window vetoes `app.close()`; tests can force-quit with `app.evaluate(({ app }) => app.exit(0))`.
   - **For T8:** `electron-builder.yml` has a `fileAssociations` entry (Editor role, no `LSHandlerRank`). Untested: Help menu, real Finder open-file, Windows/Linux `second-instance` and argv.
+- **2026-10-09 · T7 · Polish notes.**
+  - Text scaling: corner drags scale font size (6–96pt) and box together, opposite corner anchored. Middle `w`/`e` handles change width only. One drag = one undo step. The dropdown shows non-preset sizes rounded to 0.5pt. `MIN_FONT_SIZE`/`MAX_FONT_SIZE` = 6/96. Helpers `scaleRectFrom`, `scaleTextDrag` in `overlays/geometry.ts`.
+  - Stamp mode: `overlays/stampStore.ts`, `overlays/useStampMode.tsx`. Clicking a thumbnail arms it; Esc, a toolbar click or a tool change cancels; Shift+click stays armed. Crosshair cursor and `.stamp-mode` class (existing overlays don't intercept the click). A blue toolbar chip shows while armed.
+  - UI: CSS-variable dark mode (pages stay white), 13px system font toolbar, `:focus-visible` rings, an empty state with an "Open PDF…" button, tooltips with platform shortcuts, focusable overlays (Enter edits, Delete removes, arrows nudge) with aria labels.
+  - Tests: `tests/e2e/editing.spec.ts`, `tests/e2e/flow.spec.ts` (drives the real import dialog with `sig-phone.jpg`).
+  - Cross-ownership edits: `OverlayLayer`, `SelectionHandles`, `Toolbar`, `App`, `editActions`, overlay/signature CSS.
+  - Known rough edges (deferred): a disabled Select button still looks pressed; the stamp ghost isn't clamped to the page; `placeSignatureOnVisiblePage` is now unused.
 - **2026-10-09 · T8 · Packaging notes.**
   - `electron-builder.yml` excludes `node_modules` (Vite bundles every dependency), which shrank the `.app` from 395 MB to 297 MB. The asar contains the PDF.js worker, cmaps, standard fonts, jbig2/openjpeg/qcms wasm and Noto Sans.
   - Entitlements: `allow-jit` only (no network-client). `hardenedRuntime: true`, `identity: null` (unsigned). The `.pdf` file association is kept. `win` (nsis) and `linux` (AppImage, deb) are configured but untested, as is x64.
