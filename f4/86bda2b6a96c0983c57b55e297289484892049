@@ -1,0 +1,26 @@
+src/renderer/src/viewer/formLayer.css
+  s_e8b8bce4678e6f::t_fd575204beec5d 10-29
+tests/e2e/save.spec.ts
+  s_e8b8bce4678e6f::t_7a38f863a502ed 5,81-94,98,102,104-109,112-115
+  s_e8b8bce4678e6f::t_1ed9f3d1c5893f 6,68-80,95-97,99-101,103,110-111,116
+  s_e8b8bce4678e6f::t_6b86b153ca88d2 117-118
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f486bda2b6a96c0983c57b55e297289484892049",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
