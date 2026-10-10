@@ -73,6 +73,8 @@ function createWindow(): BrowserWindow {
   installCloseGuard(win);
   const id = win.webContents.id;
   win.on('closed', () => readyContents.delete(id));
+  // A reload replaces the renderer: queue opened files until the new page signals readiness.
+  win.webContents.on('did-start-loading', () => readyContents.delete(id));
 
   const devUrl = process.env['ELECTRON_RENDERER_URL'];
   if (!app.isPackaged && devUrl) {
