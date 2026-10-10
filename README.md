@@ -1,6 +1,6 @@
 # Simple PDF
 
-A straight-foward desktop app so that I never have to use Adobe Acrobat again. Supports viewing, filling out, and signing PDFs. Offline only, built with Electron for cross-platform support. 
+A straightforward desktop app so that I never have to use Adobe Acrobat again. Supports viewing, filling out, and signing PDFs. Offline only, built with Electron for cross-platform support. 
 
 What it does:
 
