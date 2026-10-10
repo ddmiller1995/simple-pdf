@@ -2,6 +2,8 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { PDFDocument } from '@cantoo/pdf-lib';
+import { PNG } from 'pngjs';
 import { expect, test, type ElectronApplication, type Page } from '@playwright/test';
 import { inspectPdf } from '../helpers/inspectPdf';
 import { launchApp, ROOT } from './launch';
@@ -61,6 +63,57 @@ test('fill fields -> Cmd+S -> output has the values, no fields; source unchanged
   expect(info.allText).toContain('Canada');
   expect(info.pages.every((p) => p.fields.length === 0)).toBe(true);
   expect(sha(fixture('acroform.pdf'))).toBe(before);
+});
+
+/** Dark pixels inside the middle of an element's screenshot: a visible tick/dot vs an empty box. */
+async function inkInside(page: Page, selector: string): Promise<number> {
+  const png = PNG.sync.read(await page.locator(selector).first().screenshot());
+  let dark = 0;
+  for (let y = Math.floor(png.height * 0.25); y < png.height * 0.75; y++) {
+    for (let x = Math.floor(png.width * 0.25); x < png.width * 0.75; x++) {
+      const i = (y * png.width + x) * 4;
+      if (png.data[i]! + png.data[i + 1]! + png.data[i + 2]! < 3 * 110) dark++;
+    }
+  }
+  return dark;
+}
+
+/** Click the centre of an element with the real mouse, the way a user would (no locator.check). */
+async function mouseClick(page: Page, selector: string): Promise<void> {
+  const box = await page.locator(selector).first().boundingBox();
+  if (!box) throw new Error(`not visible: ${selector}`);
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+}
+
+test('checkboxes and radio buttons toggle when clicked in Select mode, and save', async () => {
+  const out = join(outDir(), 'checked.pdf');
+  const page = await launchWith('acroform.pdf', { SIMPLE_PDF_E2E_SAVE: out });
+  await expect(page.getByTestId('tool-select')).toHaveAttribute('aria-pressed', 'true');
+
+  const agree = page.locator('input[type="checkbox"][name="agree"]');
+  await expect(agree).toBeVisible();
+  const agreeSel = 'input[type="checkbox"][name="agree"]';
+  expect(await inkInside(page, agreeSel)).toBe(0);
+  await mouseClick(page, agreeSel);
+  await expect(agree).toBeChecked();
+  // The tick must actually be drawn, not just the input state (regression: blank checked boxes).
+  await expect.poll(() => inkInside(page, agreeSel)).toBeGreaterThan(0);
+  await mouseClick(page, agreeSel);
+  await expect(agree).not.toBeChecked();
+  await expect.poll(() => inkInside(page, agreeSel)).toBe(0);
+  await mouseClick(page, 'input[type="checkbox"][name="agree"]');
+  await expect(agree).toBeChecked();
+
+  const radios = page.locator('input[type="radio"]');
+  await mouseClick(page, 'input[type="radio"] >> nth=1');
+  await expect(radios.nth(1)).toBeChecked();
+  await expect.poll(() => inkInside(page, 'input[type="radio"] >> nth=1')).toBeGreaterThan(0);
+  expect(await inkInside(page, 'input[type="radio"] >> nth=0')).toBe(0);
+
+  await page.keyboard.press(`${mod}+s`);
+  await expect(page.getByTestId('save-toast')).toContainText('checked.pdf');
+  const form = (await PDFDocument.load(readFileSync(out))).getForm();
+  expect(form.getFields()).toHaveLength(0); // flattened into the page on save
 });
 
 test('close with unsaved changes: Cancel keeps the window open', async () => {
