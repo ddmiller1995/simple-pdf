@@ -1,8 +1,6 @@
 # Simple PDF
 
-A small Mac app for filling out and signing PDFs. Open a PDF, type into its form fields or anywhere on the page, drop in your signature, and save a signed copy.
-
-It works entirely offline. Nothing you open or sign leaves your computer.
+A straight-foward desktop app so that I never have to use Adobe Acrobat again. Supports viewing, filling out, and signing PDFs. Offline only, built with Electron for cross-platform support. 
 
 What it does:
 
@@ -23,9 +21,9 @@ Right now there's only a build for Apple Silicon Macs (M1 or newer).
 3. Open the app. macOS will say it can't verify the developer. Click Done.
 4. Go to System Settings → Privacy & Security, scroll down, and click **Open Anyway** next to the Simple PDF message.
 
-You only have to do this the first time. The warning shows up because the app isn't registered with Apple, which costs $99 a year. The code is all here if you want to check it.
+You only have to do this the first time. The warning shows up because I'm not planning to distribute this and haven't paid for the $99 annual fee for a Apple Developer ID. The code is all open source if you want to verify or build it yourself. 
 
-If you'd rather use Terminal, this does the same thing as steps 3 and 4:
+If you'd rather use a terminal, this does the same thing as steps 3 and 4:
 
 ```sh
 xattr -dr com.apple.quarantine "/Applications/Simple PDF.app"
@@ -33,7 +31,7 @@ xattr -dr com.apple.quarantine "/Applications/Simple PDF.app"
 
 ### Build it yourself
 
-You need Node 24, [pnpm](https://pnpm.io/installation) and the Xcode command line tools (`xcode-select --install`). A copy you build yourself won't trigger the warning above.
+You need Node 24, [pnpm](https://pnpm.io/installation) and the Xcode command line tools (`xcode-select --install`). Building it yourself avoids that warning from Apple. 
 
 ```sh
 git clone https://github.com/ddmiller1995/simple-pdf.git
@@ -43,19 +41,6 @@ pnpm dist:mac
 ```
 
 The app ends up in `release/mac-arm64/`. Drag it into Applications.
-
-## Using it
-
-- **Open a file:** ⌘O, or drag a PDF onto the window.
-- **Fill a form:** click a field and type.
-- **Add text:** press T (or click Text), click on the page, and type.
-- **Add a signature:** click Sign → Add signature… and pick a photo of your signature. Dark pen on plain white paper works best. If the result looks patchy, move the Sensitivity slider. If you signed on lined paper, check Remove lines. Signatures are saved for next time.
-- **Place a signature:** click it in the Sign menu, then click where you want it on the page. Shift-click to keep stamping (useful for initials), Esc to stop. You can also just drag it onto the page.
-- **Move or resize:** press V (or click Select) and drag. Corners make text or a signature bigger or smaller. The side handles on a text box change its width.
-- **Undo:** ⌘Z. Redo is ⇧⌘Z.
-- **Save:** ⌘S saves a copy named `<file>-signed.pdf`. ⇧⌘S lets you pick the name.
-
-A few things it can't do yet: password-protected PDFs and XFA forms open read-only, and form fields typed in non-Latin scripts (Cyrillic, Chinese, etc.) are saved as editable fields instead of being merged into the page.
 
 ## Development
 
