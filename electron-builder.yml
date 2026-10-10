@@ -29,13 +29,15 @@ mac:
       arch: arm64
   category: public.app-category.productivity
   icon: build/icon.icns
-  hardenedRuntime: true
+  # Hardened runtime requires one Team ID across all binaries, which ad-hoc signing lacks
+  # (dyld refuses to load Electron Framework). Re-enable together with a Developer ID + notarize.
+  hardenedRuntime: false
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
-  # Unsigned local builds work out of the box (no Developer ID). To sign, remove this line and
+  # Ad-hoc signed (no Developer ID). For a real signature, remove this line and
   # set CSC_LINK / CSC_KEY_PASSWORD or use a keychain identity; see docs/RELEASING.md.
-  identity: null
+  identity: "-" # ad-hoc signature: free, no Apple account; see README "Installing"
   # notarize: true   # enable once signing; needs APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
 dmg:
   title: Simple PDF ${version}
