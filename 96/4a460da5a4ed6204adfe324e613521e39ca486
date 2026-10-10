@@ -1,0 +1,28 @@
+src/renderer/src/toolbar/Toolbar.tsx
+  s_e8b8bce4678e6f::t_d59a1e3c3633ed 65,76
+tests/e2e/save.spec.ts
+  s_e8b8bce4678e6f::t_3e0612bcc3f475 108-110
+src/renderer/src/styles.css
+  s_e8b8bce4678e6f::t_d59a1e3c3633ed 127
+docs/IMPLEMENTATION_PLAN.md
+  s_e8b8bce4678e6f::t_f26d01f47d85ee 407
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "964a460da5a4ed6204adfe324e613521e39ca486",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
