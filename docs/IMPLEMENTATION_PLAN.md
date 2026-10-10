@@ -404,7 +404,7 @@ Statuses: `todo` → `in-progress` → `review` → `done` (or `blocked: <reason
   - UI: CSS-variable dark mode (pages stay white), 13px system font toolbar, `:focus-visible` rings, an empty state with an "Open PDF…" button, tooltips with platform shortcuts, focusable overlays (Enter edits, Delete removes, arrows nudge) with aria labels.
   - Tests: `tests/e2e/editing.spec.ts`, `tests/e2e/flow.spec.ts` (drives the real import dialog with `sig-phone.jpg`).
   - Cross-ownership edits: `OverlayLayer`, `SelectionHandles`, `Toolbar`, `App`, `editActions`, overlay/signature CSS.
-  - Known rough edges (deferred): a disabled Select button still looks pressed; the stamp ghost isn't clamped to the page; `placeSignatureOnVisiblePage` is now unused.
+  - Known rough edges (deferred): ~~a disabled Select button still looks pressed~~ (fixed 2026-10-09); the stamp ghost isn't clamped to the page; `placeSignatureOnVisiblePage` is now unused.
 - **2026-10-09 · T8 · Packaging notes.**
   - `electron-builder.yml` excludes `node_modules` (Vite bundles every dependency), which shrank the `.app` from 395 MB to 297 MB. The asar contains the PDF.js worker, cmaps, standard fonts, jbig2/openjpeg/qcms wasm and Noto Sans.
   - Entitlements: `allow-jit` only (no network-client). `hardenedRuntime: true`, `identity: null` (unsigned). The `.pdf` file association is kept. `win` (nsis) and `linux` (AppImage, deb) are configured but untested, as is x64.

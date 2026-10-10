@@ -105,6 +105,9 @@ test('encrypted.pdf shows the view-only banner and Save is disabled', async () =
   const page = await launchWith('encrypted.pdf');
   await expect(page.getByTestId('view-only-banner')).toContainText('encrypted');
   await expect(page.getByTestId('save-button')).toBeDisabled();
+  // Disabled tools must not look pressed.
+  await expect(page.getByTestId('tool-select')).toBeDisabled();
+  await expect(page.getByTestId('tool-select')).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('open-file event opens the document', async () => {

@@ -124,7 +124,7 @@ button {
   opacity: 0.45;
 }
 
-.toolbar button[aria-pressed='true'] {
+.toolbar button[aria-pressed='true']:not(:disabled) {
   background: var(--accent-soft);
   border-color: var(--accent);
 }

@@ -62,7 +62,7 @@ function EditTools() {
       <button
         type="button"
         data-testid="tool-select"
-        aria-pressed={tool === 'select'}
+        aria-pressed={enabled && tool === 'select'}
         title={tip('Select and move items', 'V')}
         aria-keyshortcuts="V"
         disabled={!enabled}
@@ -73,7 +73,7 @@ function EditTools() {
       <button
         type="button"
         data-testid="tool-text"
-        aria-pressed={tool === 'text'}
+        aria-pressed={enabled && tool === 'text'}
         title={tip('Add text: click on the page to type', 'T')}
         aria-keyshortcuts="T"
         disabled={!enabled}
