@@ -1,0 +1,26 @@
+LICENSE
+  s_e8b8bce4678e6f::t_4d73b389c6ad9b 1-21
+README.md
+  s_e8b8bce4678e6f::t_91d4362a91f9ea 3,5,7-15,19,21-24,26,28,34,36,45,49-56,58,64-66,69-71,73
+package.json
+  s_e8b8bce4678e6f::t_51fc75857bd29f 8
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "b59c980cd28188b149accecf844e136101ebe2b5",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
