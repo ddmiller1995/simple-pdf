@@ -1,0 +1,36 @@
+README.md
+  s_e8b8bce4678e6f::t_4af2b5678bdbc6 1-85
+docs/RELEASING.md
+  s_e8b8bce4678e6f::t_780a2761555cae 5-15,26,33-39,41,54
+package.json
+  s_e8b8bce4678e6f::t_a63dd6036bf218 3
+.github/release-notes.md
+  s_e8b8bce4678e6f::t_a63dd6036bf218 1-7
+.github/workflows/ci.yml
+  s_e8b8bce4678e6f::t_a63dd6036bf218 1-22
+electron-builder.yml
+  s_e8b8bce4678e6f::t_29690edfaeef45 40
+  s_e8b8bce4678e6f::t_a898ebe73d0059 32-34
+  s_e8b8bce4678e6f::t_d7176a4453e927 38
+.github/workflows/release.yml
+  s_e8b8bce4678e6f::t_a63dd6036bf218 1-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "95a91f6fed9e433bb4984581b980da16f8c26c6f",
+  "prompts": {},
+  "sessions": {
+    "s_e8b8bce4678e6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5e41ece7-1b32-49b0-8dfd-4f275801e47b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dakota Miller <ddmiller1995@gmail.com>",
+      "custom_attributes": {
+        "runtime": "local"
+      }
+    }
+  }
+}
