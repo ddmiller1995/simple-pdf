@@ -1,85 +1,73 @@
 # Simple PDF
 
-A small, offline desktop app for the PDF chores that come up most: **view** a PDF, **fill it out**, **sign it**, and **save** a copy.
+A small Mac app for filling out and signing PDFs. Open a PDF, type into its form fields or anywhere on the page, drop in your signature, and save a signed copy.
 
-- **View** multi-page PDFs with zoom and smooth scrolling.
-- **Fill** the PDF's own form fields (text boxes, checkboxes, radio buttons, dropdowns), or click anywhere to add free text.
-- **Sign** with a photo of your real signature or initials. The paper background is removed automatically. Drag it onto the page, or click it and stamp it where you want (Shift-click to stamp several pages).
-- **Save** a new file (`<name>-signed.pdf`). Your text and signatures are baked into the page, so they look the same in every PDF viewer. The original file is never overwritten unless you choose to.
-- **Fully offline.** The app never connects to the internet. Your documents and signatures stay on your computer.
+It works entirely offline. Nothing you open or sign leaves your computer.
 
-Currently built for **macOS on Apple Silicon** (M1 and later). Windows and Linux builds are configured but not yet tested.
+What it does:
+
+- View multi-page PDFs
+- Fill in form fields (text, checkboxes, radio buttons, dropdowns)
+- Add text anywhere on a page
+- Sign with a photo of your actual signature. The app strips out the paper background, and you can stamp it on as many pages as you need.
+- Save to a new file. Everything you added is merged into the page, so it looks the same in Preview, Acrobat or a browser. The original isn't touched.
+
+Right now there's only a build for Apple Silicon Macs (M1 or newer).
 
 ## Installing
 
-### Option 1: Download a release (easiest)
+### Download it
 
-1. Go to [Releases](https://github.com/ddmiller1995/simple-pdf/releases) and download the latest `Simple PDF-<version>-arm64.dmg`.
-2. Open the `.dmg` and drag **Simple PDF** into **Applications**.
-3. Open Simple PDF from Applications. macOS shows a warning that it **could not verify** the app. This is expected: the app isn't registered with Apple (that costs $99/year). Click **Done**.
-4. Open **System Settings → Privacy & Security**, scroll down to the message about Simple PDF, and click **Open Anyway**. Confirm with your password or Touch ID.
+1. Grab the `.dmg` from the [latest release](https://github.com/ddmiller1995/simple-pdf/releases/latest).
+2. Open it and drag Simple PDF into Applications.
+3. Open the app. macOS will say it can't verify the developer. Click Done.
+4. Go to System Settings → Privacy & Security, scroll down, and click **Open Anyway** next to the Simple PDF message.
 
-You only have to do this once. After that, Simple PDF opens like any other app.
+You only have to do this the first time. The warning shows up because the app isn't registered with Apple, which costs $99 a year. The code is all here if you want to check it.
 
-<details>
-<summary>Prefer Terminal? Skip steps 3 and 4 with one command</summary>
+If you'd rather use Terminal, this does the same thing as steps 3 and 4:
 
 ```sh
 xattr -dr com.apple.quarantine "/Applications/Simple PDF.app"
 ```
 
-This removes the "downloaded from the internet" flag, so macOS opens the app without the warning.
-</details>
+### Build it yourself
 
-> **Why the warning?** Apps distributed outside the App Store are normally signed with a paid Apple Developer ID and checked by Apple ("notarized"). Simple PDF is a free personal project, so it skips that step. The app is open source: you can read every line here, or build it yourself (Option 2).
-
-### Option 2: Build it yourself
-
-A Mac you build the app on never shows the Gatekeeper warning. You need:
-
-- [Node.js 24](https://nodejs.org/) (if you use [fnm](https://github.com/Schniz/fnm) or nvm, the repo's `.node-version` selects it automatically)
-- [pnpm](https://pnpm.io/installation) (`npm install -g pnpm`, or `corepack enable`)
-- Xcode Command Line Tools (`xcode-select --install`)
+You need Node 24, [pnpm](https://pnpm.io/installation) and the Xcode command line tools (`xcode-select --install`). A copy you build yourself won't trigger the warning above.
 
 ```sh
 git clone https://github.com/ddmiller1995/simple-pdf.git
 cd simple-pdf
 pnpm install
 pnpm dist:mac
-open release/
 ```
 
-Drag `release/mac-arm64/Simple PDF.app` into Applications, or open the `.dmg` in `release/`.
+The app ends up in `release/mac-arm64/`. Drag it into Applications.
 
 ## Using it
 
-| To… | Do this |
-|---|---|
-| Open a PDF | **Open** (⌘O), or drag a PDF onto the window. In Finder you can also use **Open With → Simple PDF**. |
-| Fill a form field | Click the field and type. |
-| Add text anywhere | **Text** tool (T), then click on the page and type. |
-| Add your signature | **Sign** → **Add signature…** and pick a photo or scan of your signature on white paper. Adjust **Sensitivity** if needed, then **Save**. It's kept for next time. |
-| Place a signature | **Sign**, then drag a signature onto the page. Or click it and click on the page to stamp it; Shift-click to keep stamping. Press Esc to cancel. |
-| Move, resize, delete | **Select** tool (V), then drag an item. Drag a corner to scale (text gets larger or smaller); drag a side handle of a text box to change its width. Delete removes. Arrow keys nudge. |
-| Undo / redo | ⌘Z / ⇧⌘Z |
-| Save | ⌘S saves to a new `-signed.pdf` file. ⇧⌘S is Save As. |
+- **Open a file:** ⌘O, or drag a PDF onto the window.
+- **Fill a form:** click a field and type.
+- **Add text:** press T (or click Text), click on the page, and type.
+- **Add a signature:** click Sign → Add signature… and pick a photo of your signature. Dark pen on plain white paper works best. If the result looks patchy, move the Sensitivity slider. If you signed on lined paper, check Remove lines. Signatures are saved for next time.
+- **Place a signature:** click it in the Sign menu, then click where you want it on the page. Shift-click to keep stamping (useful for initials), Esc to stop. You can also just drag it onto the page.
+- **Move or resize:** press V (or click Select) and drag. Corners make text or a signature bigger or smaller. The side handles on a text box change its width.
+- **Undo:** ⌘Z. Redo is ⇧⌘Z.
+- **Save:** ⌘S saves a copy named `<file>-signed.pdf`. ⇧⌘S lets you pick the name.
 
-**Tips for signature photos:** sign with a dark pen on plain white paper, and take the photo in even light, filling most of the frame. If you photographed it on lined paper, tick **Remove lines**.
-
-**Limitations:** password-protected PDFs and XFA forms open view-only. Form-field values in non-Latin scripts (e.g. Cyrillic, Chinese) are saved as fillable fields rather than baked into the page.
+A few things it can't do yet: password-protected PDFs and XFA forms open read-only, and form fields typed in non-Latin scripts (Cyrillic, Chinese, etc.) are saved as editable fields instead of being merged into the page.
 
 ## Development
 
-Requires Node 24 and pnpm (see above).
-
 ```sh
 pnpm install
-pnpm dev          # run the app with live reload
-pnpm test         # unit tests (Vitest)
-pnpm e2e          # end-to-end tests against the built app (Playwright)
-pnpm typecheck && pnpm lint
+pnpm dev        # run with live reload
+pnpm test       # unit tests
+pnpm e2e        # end-to-end tests
 ```
 
-Built with Electron, React and TypeScript. [PDF.js](https://mozilla.github.io/pdf.js/) renders pages and [pdf-lib](https://github.com/cantoo-scribe/pdf-lib) writes the saved file. The design and build plan is in [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md). Releasing and code signing are covered in [`docs/RELEASING.md`](docs/RELEASING.md), and the manual test checklist is [`docs/MANUAL_QA.md`](docs/MANUAL_QA.md).
+It's an Electron app using React, [PDF.js](https://mozilla.github.io/pdf.js/) for rendering and [pdf-lib](https://github.com/cantoo-scribe/pdf-lib) for saving. More detail in [docs/](docs/): the original implementation plan, how releases work, and a manual test checklist.
 
-The bundled Noto Sans font is licensed under the SIL Open Font License (`resources/fonts/OFL.txt`).
+## License
+
+MIT. See [LICENSE](LICENSE). The bundled Noto Sans font is under the SIL Open Font License (`resources/fonts/OFL.txt`).

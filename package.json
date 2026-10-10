@@ -5,7 +5,7 @@
   "private": true,
   "main": "./out/main/index.js",
   "author": "Dakota Miller",
-  "license": "UNLICENSED",
+  "license": "MIT",
   "packageManager": "pnpm@10.32.1",
   "engines": {
     "node": ">=24"
