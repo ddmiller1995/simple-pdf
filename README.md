@@ -10,7 +10,14 @@ What it does:
 - Sign with a photo of your actual signature. The app strips out the paper background, and you can stamp it on as many pages as you need.
 - Save to a new file. Everything you added is merged into the page, so it looks the same in Preview, Acrobat or a browser. The original isn't touched.
 
-Right now there's only a build for Apple Silicon Macs (M1 or newer).
+Right now there's only a build for Apple Silicon Macs (M1 or newer), but would be trivial to build for Apple Intel, Windows or Linux.
+
+### Screenshots
+<img width="1512" height="860" alt="Screenshot 2026-10-10 at 10 21 08 AM" src="https://github.com/user-attachments/assets/17f83542-d97a-4c2f-acd1-216dacb9508c" />
+
+<img width="770" height="454" alt="Screenshot 2026-10-10 at 10 24 34 AM" src="https://github.com/user-attachments/assets/94c2f3c7-71dd-4045-bc1a-678395bd0d1f" />
+
+<img width="1507" height="856" alt="Screenshot 2026-10-10 at 10 24 51 AM" src="https://github.com/user-attachments/assets/a6abd510-20bc-495b-9446-98221486502c" />
 
 ## Installing
 
