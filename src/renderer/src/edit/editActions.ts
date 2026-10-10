@@ -5,8 +5,8 @@ import { clampInto, moveRect, pageBounds } from '../overlays/geometry';
 import { useEditStore } from '../overlays/editStore';
 import { sizeAtWidth } from '../overlays/textFit';
 
-export const MIN_FONT_SIZE = 8;
-export const MAX_FONT_SIZE = 36;
+export const MIN_FONT_SIZE = 6;
+export const MAX_FONT_SIZE = 96;
 
 const canEdit = (): boolean => useDocumentStore.getState().doc?.capabilities.editable === true;
 

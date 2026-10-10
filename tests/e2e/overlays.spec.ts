@@ -205,12 +205,16 @@ test('text on a rotated page and a dragged signature: anchoring, undo/redo, expo
   await expect(page.getByTestId('text-overlay')).toHaveCount(1);
 });
 
-test('clicking a thumbnail places the signature on the visible page; typing keeps native undo', async () => {
+test('clicking a thumbnail arms stamp mode; a page click places it; typing keeps native undo', async () => {
   const page = await setup();
   await page.locator('[data-page-slot="2"]').evaluate((e) => e.scrollIntoView());
   await expect(page.getByTestId('page-indicator')).toHaveText('3 / 4');
+  await expect(page.locator('.page-view[data-page-index="2"] canvas')).toBeVisible();
   await page.getByTestId('sign-button').click();
   await page.getByTestId('signature-item').locator('.sig-thumb').click();
+  await expect(page.getByTestId('image-overlay')).toHaveCount(0);
+  const armedBox = (await pageBox(page, 2).boundingBox())!;
+  await page.mouse.click(armedBox.x + 250, armedBox.y + 250);
   await expect(page.getByTestId('image-overlay')).toHaveCount(1);
   const s = await state(page);
   expect((s.overlays[0] as { pageIndex: number }).pageIndex).toBe(2);

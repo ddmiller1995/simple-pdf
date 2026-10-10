@@ -1,8 +1,57 @@
+/* Theme tokens. Light by default; dark follows the system via prefers-color-scheme. PDF pages
+   stay white in both (they are paper). */
 :root {
+  color-scheme: light dark;
+  --bg: #e8e8ea;
+  --surface: #f6f6f7;
+  --surface-raised: #ffffff;
+  --surface-hover: #ececef;
+  --border: #d0d0d4;
+  --border-strong: #c4c4c9;
+  --text: #1d1d1f;
+  --text-muted: #6e6e73;
+  --accent: #0a64d6;
+  --accent-soft: #dbe6fd;
+  --accent-text: #ffffff;
+  --danger: #c0271b;
+  --banner-error-bg: #fde8e8;
+  --banner-error-text: #8a1c1c;
+  --banner-error-border: #f2b8b8;
+  --banner-notice-bg: #fff4d6;
+  --banner-notice-text: #6b4b00;
+  --banner-notice-border: #ecd48a;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  --focus: #0a64d6;
+
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  font-size: 14px;
-  color: #1d1d1f;
-  background: #e8e8ea;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #2b2b2e;
+    --surface: #323235;
+    --surface-raised: #3d3d41;
+    --surface-hover: #48484d;
+    --border: #1f1f21;
+    --border-strong: #55555a;
+    --text: #f2f2f4;
+    --text-muted: #a0a0a8;
+    --accent: #4d9cff;
+    --accent-soft: #274569;
+    --accent-text: #0b1b2e;
+    --danger: #ff6b5e;
+    --banner-error-bg: #4a2323;
+    --banner-error-text: #ffc9c4;
+    --banner-error-border: #7a3636;
+    --banner-notice-bg: #4a3d17;
+    --banner-notice-text: #ffe29a;
+    --banner-notice-border: #7a6528;
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    --focus: #4d9cff;
+  }
 }
 
 html,
@@ -12,30 +61,157 @@ body,
   margin: 0;
 }
 
+body {
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
 .app {
   display: flex;
   flex-direction: column;
   height: 100%;
 }
 
+/* ---- Toolbar ------------------------------------------------------------------------------ */
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 6px 12px;
-  background: #f6f6f7;
-  border-bottom: 1px solid #d0d0d4;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  user-select: none;
 }
 
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+.toolbar button,
+.empty-state button,
+.error-banner button {
+  padding: 3px 11px;
+  min-height: 24px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface-raised);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+  cursor: default;
+}
+
+.toolbar button:hover:not(:disabled),
+.error-banner button:hover {
+  background: var(--surface-hover);
+}
+
+.toolbar button:active:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.toolbar button:disabled {
+  opacity: 0.45;
+}
+
+.toolbar button[aria-pressed='true'] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+button.primary,
+.empty-state button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+  padding: 6px 18px;
+}
+
+button.primary:hover {
+  filter: brightness(1.08);
+}
+
+/* Visible keyboard focus everywhere (mouse clicks do not show it). */
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.toolbar select {
+  font: inherit;
+  color: inherit;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+.zoom-label {
+  min-width: 3.5em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.page-indicator {
+  min-width: 5em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.stamp-hint {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* ---- Empty state -------------------------------------------------------------------------- */
 .empty-state {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: #6e6e73;
-  font-size: 18px;
+  gap: 6px;
+  color: var(--text-muted);
 }
 
+.empty-icon {
+  margin-bottom: 8px;
+  opacity: 0.7;
+}
+
+.empty-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.empty-sub {
+  margin: 0 0 14px;
+  font-size: 13px;
+}
+
+/* ---- Viewer ------------------------------------------------------------------------------- */
 .viewer {
   flex: 1;
   overflow: auto;
@@ -60,62 +236,23 @@ body,
   display: block;
 }
 
-.toolbar-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.toolbar-spacer {
-  flex: 1;
-}
-
-.toolbar button {
-  font: inherit;
-  padding: 3px 10px;
-  border: 1px solid #c4c4c9;
-  border-radius: 5px;
-  background: #fff;
-  color: inherit;
-}
-
-.toolbar button:hover:not(:disabled) {
-  background: #ececef;
-}
-
-.toolbar button:disabled {
-  opacity: 0.45;
-}
-
-.zoom-label {
-  min-width: 3.5em;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.page-indicator {
-  min-width: 5em;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-  color: #6e6e73;
-}
-
+/* ---- Banners and toast -------------------------------------------------------------------- */
 .error-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 8px 12px;
-  background: #fde8e8;
-  color: #8a1c1c;
-  border-bottom: 1px solid #f2b8b8;
+  background: var(--banner-error-bg);
+  color: var(--banner-error-text);
+  border-bottom: 1px solid var(--banner-error-border);
 }
 
 .notice-banner {
   padding: 8px 12px;
-  background: #fff4d6;
-  color: #6b4b00;
-  border-bottom: 1px solid #ecd48a;
+  background: var(--banner-notice-bg);
+  color: var(--banner-notice-text);
+  border-bottom: 1px solid var(--banner-notice-border);
 }
 
 .toast {
@@ -133,7 +270,7 @@ body,
 
 .app.dragging .empty-state,
 .app.dragging .viewer {
-  outline: 3px dashed #3b82f6;
+  outline: 3px dashed var(--accent);
   outline-offset: -8px;
 }
 
@@ -147,4 +284,13 @@ body,
 .page-layer {
   position: absolute;
   inset: 0;
+}
+
+.stamp-ghost {
+  position: fixed;
+  z-index: 2000;
+  height: auto;
+  transform: translate(-50%, -50%);
+  opacity: 0.6;
+  pointer-events: none;
 }

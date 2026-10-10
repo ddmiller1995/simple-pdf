@@ -1,7 +1,9 @@
 import { saveDocument } from '../save/saveDocument';
 import { useEffect, useRef, useState } from 'react';
 import { MAX_FONT_SIZE, MIN_FONT_SIZE, setSelectedFontSize } from '../edit/editActions';
-import { placeSignatureAtClient, placeSignatureOnVisiblePage } from '../overlays/placement';
+import { placeSignatureAtClient } from '../overlays/placement';
+import { useStampStore } from '../overlays/stampStore';
+import { shortcut, tip } from './shortcuts';
 import { SignaturePanel } from '../signature/SignaturePanel';
 import { useDocumentStore } from '../state/documentStore';
 import { openWithDialog } from '../viewer/openDocument';
@@ -25,6 +27,7 @@ function EditTools() {
     const o = s.overlays.find((x) => x.id === s.selectedId);
     return o?.kind === 'text' ? o : undefined;
   });
+  const armed = useStampStore((s) => s.armed);
   const [signOpen, setSignOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
   const enabled = doc?.capabilities.editable === true;
@@ -60,7 +63,8 @@ function EditTools() {
         type="button"
         data-testid="tool-select"
         aria-pressed={tool === 'select'}
-        title="Select (V)"
+        title={tip('Select and move items', 'V')}
+        aria-keyshortcuts="V"
         disabled={!enabled}
         onClick={() => setTool('select')}
       >
@@ -70,7 +74,8 @@ function EditTools() {
         type="button"
         data-testid="tool-text"
         aria-pressed={tool === 'text'}
-        title="Text (T)"
+        title={tip('Add text: click on the page to type', 'T')}
+        aria-keyshortcuts="T"
         disabled={!enabled}
         onClick={() => setTool('text')}
       >
@@ -81,7 +86,8 @@ function EditTools() {
           type="button"
           data-testid="sign-button"
           aria-expanded={signOpen}
-          title="Sign"
+          aria-haspopup="true"
+          title="Sign: pick a signature, then click the page to place it"
           disabled={!enabled}
           onClick={() => setSignOpen((v) => !v)}
         >
@@ -89,10 +95,14 @@ function EditTools() {
         </button>
         {signOpen && (
           <div className="sig-popover" data-testid="sign-popover">
+            <p className="sig-hint" data-testid="stamp-hint-text">
+              Click a signature, then click the page to place it. Shift+click places several. Esc
+              cancels. You can also drag one onto a page.
+            </p>
             <SignaturePanel
               onPick={(sig) => {
                 setSignOpen(false);
-                void placeSignatureOnVisiblePage(sig);
+                useStampStore.getState().arm(sig);
               }}
               onDrop={(sig, x, y) => {
                 setSignOpen(false);
@@ -102,18 +112,23 @@ function EditTools() {
           </div>
         )}
       </div>
+      {armed && enabled && (
+        <span className="stamp-hint" role="status" data-testid="stamp-hint">
+          Click the page to place. Shift+click for more. Esc to cancel.
+        </span>
+      )}
       {selectedText && enabled && (
         <label className="font-size-control">
           Size
           <select
             data-testid="font-size"
             value={selectedText.fontSize}
-            aria-label={`Font size (${MIN_FONT_SIZE}-${MAX_FONT_SIZE} pt)`}
+            aria-label={`Font size (${MIN_FONT_SIZE} to ${MAX_FONT_SIZE} points)`}
             onChange={(e) => void setSelectedFontSize(Number(e.target.value))}
           >
             {sizes.map((n) => (
               <option key={n} value={n}>
-                {n}
+                {Math.round(n * 2) / 2}
               </option>
             ))}
           </select>
@@ -132,7 +147,12 @@ export function Toolbar() {
   return (
     <div className="toolbar" role="toolbar" aria-label="Main toolbar">
       <div className="toolbar-group">
-        <button type="button" onClick={() => void openWithDialog()} data-testid="open-button">
+        <button
+          type="button"
+          onClick={() => void openWithDialog()}
+          data-testid="open-button"
+          title={tip('Open a PDF', shortcut('O'))}
+        >
           Open
         </button>
       </div>
@@ -145,7 +165,7 @@ export function Toolbar() {
         <button
           type="button"
           aria-label="Zoom out"
-          title="Zoom out (Cmd+-)"
+          title={tip('Zoom out', shortcut('-'))}
           disabled={!hasDoc}
           onClick={() => applyZoom('out')}
         >
@@ -157,7 +177,7 @@ export function Toolbar() {
         <button
           type="button"
           aria-label="Zoom in"
-          title="Zoom in (Cmd+=)"
+          title={tip('Zoom in', shortcut('='))}
           disabled={!hasDoc}
           onClick={() => applyZoom('in')}
         >
@@ -165,7 +185,8 @@ export function Toolbar() {
         </button>
         <button
           type="button"
-          title="Fit width (Cmd+0)"
+          aria-label="Fit width"
+          title={tip('Fit page width', shortcut('0'))}
           disabled={!hasDoc}
           onClick={() => useViewerStore.getState().requestFit()}
         >
@@ -180,7 +201,7 @@ export function Toolbar() {
       <div className="toolbar-group toolbar-end">
         <button
           type="button"
-          title="Save (Cmd+S)"
+          title={tip('Save', shortcut('S'))}
           data-testid="save-button"
           disabled={!doc || !doc.capabilities.editable}
           onClick={() => void saveDocument()}

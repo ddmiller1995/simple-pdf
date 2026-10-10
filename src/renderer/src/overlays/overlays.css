@@ -1,3 +1,18 @@
+/* Stamp mode: the whole page takes the click (existing items do not intercept it). */
+.overlay-layer.stamp-mode {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.stamp-mode .overlay-item {
+  pointer-events: none;
+}
+
+.overlay-item:focus-visible {
+  outline: 2px solid #2f6fed;
+  outline-offset: 1px;
+}
+
 /* Overlay layer: pass clicks through to the form widgets except on overlays (and, with the Text
    tool, on the whole page so a click anywhere creates a box). */
 .overlay-layer {
@@ -98,13 +113,19 @@
   bottom: -5px;
   cursor: nwse-resize;
 }
-
-/* Toolbar tools + signature popover */
-.toolbar button[aria-pressed='true'] {
-  background: #dbe6fd;
-  border-color: #2f6fed;
+.sel-w,
+.sel-e {
+  top: calc(50% - 5px);
+  cursor: ew-resize;
+}
+.sel-w {
+  left: -5px;
+}
+.sel-e {
+  right: -5px;
 }
 
+/* Signature popover */
 .sign-wrap {
   position: relative;
 }
@@ -118,10 +139,10 @@
   max-height: 60vh;
   overflow: auto;
   padding: 10px;
-  background: #fff;
-  border: 1px solid #c4c4c9;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow);
 }
 
 .sig-ghost {
@@ -140,7 +161,17 @@
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #6e6e73;
+  color: var(--text-muted);
+}
+
+.toolbar button.sig-thumb {
+  background: #fff;
+}
+
+.sig-popover .sig-hint {
+  margin: 0 0 4px;
+  max-width: 260px;
+  line-height: 1.35;
 }
 
 .sig-thumb {
