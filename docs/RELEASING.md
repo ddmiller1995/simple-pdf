@@ -4,11 +4,11 @@ All commands run under Node 24 (`fnm exec --using=24 -- <cmd>`). Build output go
 
 ## Publishing a release
 
-Releases are built by GitHub Actions (`.github/workflows/release.yml`) on a macOS (Apple Silicon) runner:
+Releases are built by GitHub Actions (`.github/workflows/release.yml`) as a test job (macOS) followed by parallel build jobs on macOS (Apple Silicon), Windows and Linux runners, then a publish job:
 
 1. Bump `"version"` in `package.json` (e.g. `1.1.0`) and commit.
 2. Tag and push: `git tag v1.1.0 && git push origin main v1.1.0`. The tag must match the version, or the workflow fails.
-3. The workflow runs typecheck, lint, unit and E2E tests, builds the ad-hoc-signed `.dmg` and `.zip`, runs `verify:packaged` and `codesign --verify`, then creates the GitHub Release with the install notes from `.github/release-notes.md` plus auto-generated change notes.
+3. The workflow runs typecheck, lint, unit and E2E tests, builds the ad-hoc-signed `.dmg` and `.zip` (with `verify:packaged` and `codesign --verify`), the Windows NSIS installer and the Linux AppImage and `.deb`, then creates the GitHub Release with the install notes from `.github/release-notes.md` plus auto-generated change notes.
 
 `.github/workflows/ci.yml` runs the same checks on every push to `main` and on pull requests.
 
@@ -58,7 +58,7 @@ Requires an Apple Developer Program membership (about $99/year).
 4. Run `pnpm dist:mac`. electron-builder signs, submits to Apple, waits, and staples the ticket.
 5. Verify: `spctl -a -vv "release/mac-arm64/Simple PDF.app"` should report `source=Notarized Developer ID`.
 
-## Windows and Linux (configured, not yet built or verified)
+## Windows and Linux (built in CI, packaged app not auto-verified)
 
 Config exists in `electron-builder.yml`. Build on the matching OS (or in CI), since native tooling differs.
 

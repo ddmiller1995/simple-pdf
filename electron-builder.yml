@@ -46,6 +46,7 @@ win:
     - target: nsis
       arch: x64
   icon: build/icon.png
+  artifactName: ${productName}-${version}-win-${arch}.${ext}
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -54,6 +55,7 @@ linux:
     - AppImage
     - deb
   icon: build/icon.png
+  artifactName: ${productName}-${version}-linux-${arch}.${ext}
   category: Office
   maintainer: Dakota Miller <ddmiller1995@gmail.com>
   mimeTypes:

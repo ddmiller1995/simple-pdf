@@ -10,7 +10,7 @@ What it does:
 - Sign with a photo of your actual signature. The app strips out the paper background, and you can stamp it on as many pages as you need.
 - Save to a new file. Everything you added is merged into the page, so it looks the same in Preview, Acrobat or a browser. The original isn't touched.
 
-Right now there's only a build for Apple Silicon Macs (M1 or newer), but would be trivial to build for Apple Intel, Windows or Linux.
+Releases are built for Apple Silicon Macs (M1 or newer), Windows (x64) and Linux (x64, AppImage and .deb).
 
 ### Screenshots
 <img width="1512" height="860" alt="Screenshot 2026-10-10 at 10 21 08 AM" src="https://github.com/user-attachments/assets/17f83542-d97a-4c2f-acd1-216dacb9508c" />
@@ -22,6 +22,12 @@ Right now there's only a build for Apple Silicon Macs (M1 or newer), but would b
 ## Installing
 
 ### Download it
+
+Windows: grab the `-win-x64.exe` installer from the [latest release](https://github.com/ddmiller1995/simple-pdf/releases/latest). It's unsigned, so SmartScreen will warn you: click **More info**, then **Run anyway**.
+
+Linux: grab the `.AppImage` (`chmod +x` it and run) or the `.deb` (`sudo apt install ./Simple*.deb`).
+
+macOS:
 
 1. Grab the `.dmg` from the [latest release](https://github.com/ddmiller1995/simple-pdf/releases/latest).
 2. Open it and drag Simple PDF into Applications.
